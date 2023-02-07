@@ -4,7 +4,6 @@ import "@babylonjs/loaders/glTF";
 import {
     Engine,
     Scene,
-    ArcRotateCamera,
     Vector3,
     HemisphericLight,
     Mesh, MeshBuilder,
@@ -12,8 +11,6 @@ import {
     Color4,
     StandardMaterial,
     Color3,
-    PointLight,
-    ShadowGenerator,
     Quaternion,
     Matrix
 } from "@babylonjs/core";
@@ -23,7 +20,7 @@ import {
     Control
 } from "@babylonjs/gui";
 import {Environment} from "./environment";
-import {Player} from "./characterController";
+import {Player} from "./player";
 
 enum State { START = 0, GAME = 1, LOSE = 2 }
 
@@ -85,8 +82,6 @@ class App {
 
         //create the canvas html element and attach it to the webpage
         this._canvas = document.createElement("canvas");
-        //this._canvas.style.width = "70%";
-        //this._canvas.style.height = "70%";
         this._canvas.id = "gameCanvas";
         renderContainer.appendChild(this._canvas);
 
@@ -184,12 +179,6 @@ class App {
 
             //move origin of box collider to the bottom of the mesh (to match player mesh)
             outer.bakeTransformIntoVertices(Matrix.Translation(0, 1.5, 0))
-
-            //for collisions
-            outer.ellipsoid = new Vector3(1, 1.5, 1);
-            outer.ellipsoidOffset = new Vector3(0, 1.5, 0);
-
-            outer.rotationQuaternion = new Quaternion(0, 1, 0, 0); // rotate the player mesh 180 since we want to see the back of the player
 
             var body = MeshBuilder.CreateSphere("body", {diameter: 0.3, segments: 32}, scene);
             var bodymtl = new StandardMaterial("white", scene);

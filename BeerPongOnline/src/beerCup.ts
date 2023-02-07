@@ -21,7 +21,8 @@ export class BeerCup {
         
         const multiplier = new Vector3(1.6, 1, 2.8);
         
-        const offset = new Vector3(0, 3.15, -4);
+        //const offset = new Vector3(0, 3.15, -4);
+        const offset = new Vector3(0, 0, 0);
         
         position = new Vector3(
             position.x * multiplier.x + offset.x,
