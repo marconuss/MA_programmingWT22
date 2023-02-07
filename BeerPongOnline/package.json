@@ -11,5 +11,9 @@
   "devDependencies": {
     "typescript": "^4.9.3",
     "vite": "^4.1.0"
+  },
+  "dependencies": {
+    "@types/cannon": "^0.1.8",
+    "cannon": "^0.6.2"
   }
 }

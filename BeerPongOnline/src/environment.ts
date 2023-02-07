@@ -5,9 +5,15 @@
     SceneLoader,
     MeshBuilder,
     TransformNode,
-    PBRMetallicRoughnessMaterial, Texture, StandardMaterial, PBRMaterial
+    PBRMetallicRoughnessMaterial, 
+    Texture, 
+    StandardMaterial,
+    CubeTexture, 
+    PhysicsImpostor, 
+    CannonJSPlugin
 } from "@babylonjs/core";
 import {BeerCup} from "./beerCup";
+import CANNON from "cannon";
 
 export class Environment {
     private _scene: Scene;
@@ -41,17 +47,31 @@ export class Environment {
 
         const tableMtl = new PBRMetallicRoughnessMaterial("Table material", this._scene);
         tableMtl.baseTexture = new Texture("./assets/textures/Table.png", this._scene, true, false);
-        tableMtl.roughness = 0;
+        tableMtl.roughness = 0.5;
         tableMtl.metallic = 0;
         //redCupMtl.transparencyMode = PBRMaterial.PBRMATERIAL_OPAQUE;
         this._tableMtl = tableMtl;
+
+        const skyBoxTexture = new CubeTexture("./assets/textures/Sky.env", scene);
+        this._scene.environmentTexture = skyBoxTexture;
+        //scene.createDefaultSkybox(skyBoxTexture, true, 1000);
     }
 
     public async load() {
+        this._scene.enablePhysics(new Vector3(0, -9.81, 0), new CannonJSPlugin(true, 10, CANNON));
+
         var ground = MeshBuilder.CreateGround("ground", {width: 24, height: 24}, this._scene);
         const groundmtl = new StandardMaterial("groundmtl", this._scene);
         groundmtl.diffuseTexture = new Texture("./assets/textures/Floor.png", this._scene, true, false);
         ground.material = groundmtl;
+
+        ground.physicsImpostor = new PhysicsImpostor(
+            ground,
+            PhysicsImpostor.BoxImpostor,
+            {mass: 0, restitution: 0.5}
+        );
+
+
         const assets = await this.loadAssets()
         const scaleMultiplier = 5;
 
@@ -127,6 +147,8 @@ export class Environment {
 
 
         assets.beerCup.dispose();
+
+        this._createImpostors();
     }
 
     public async loadAssets() {
@@ -146,5 +168,18 @@ export class Environment {
             table: table as Mesh,
             beerCup: beerCup as Mesh
         }
+    }
+
+    private _createImpostors(): void {
+
+        const sphere = MeshBuilder.CreateSphere("sphere1", {diameter: 2, segments: 16});
+        sphere.position.y = 8;
+
+        sphere.physicsImpostor = new PhysicsImpostor(
+            sphere,
+            PhysicsImpostor.SphereImpostor,
+            {mass: 0.2, restitution: 1}
+        );
+
     }
 }

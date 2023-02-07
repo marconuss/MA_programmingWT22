@@ -12,7 +12,7 @@ import {
     StandardMaterial,
     Color3,
     Quaternion,
-    Matrix, PointLight
+    Matrix, PointLight, CubeTexture, PhysicsImpostor, CannonJSPlugin
 } from "@babylonjs/core";
 import {
     AdvancedDynamicTexture,
@@ -21,6 +21,7 @@ import {
 } from "@babylonjs/gui";
 import {Environment} from "./environment";
 import {Player} from "./player";
+import * as CANNON from "cannon";
 
 enum State { START = 0, GAME = 1, LOSE = 2 }
 
@@ -164,13 +165,18 @@ class App {
         //--CREATE ENVIRONMENT--
         const environment = new Environment(scene);
         this._environment = environment;
-        await this._environment.load(); //environment
+        await this._environment.load();
+
+        // create player
         await this._loadPlayerAssets(scene);
+
+
     }
 
     private async _loadPlayerAssets(scene) {
 
         async function loadPlayer() {
+
             //collision mesh
             const outer = MeshBuilder.CreateSphere("outer", {diameter: 0.3, segments: 32}, scene);
             outer.isVisible = false;
@@ -243,7 +249,15 @@ class App {
 
         //--WHEN SCENE FINISHED LOADING--
         await scene.whenReadyAsync();
-        scene.getMeshByName("outer").position = new Vector3(0, 5, 6.5);
+        
+        const playerBall = scene.getMeshByName("outer");
+        playerBall.position = new Vector3(0, 5, 6.5);
+        playerBall.physicsImpostor = new PhysicsImpostor(
+            playerBall,
+            PhysicsImpostor.SphereImpostor,
+            {mass: 1, restitution: 0}
+        );
+
         //get rid of start scene, switch to gamescene and change states
         this._scene.dispose();
         this._state = State.GAME;
@@ -283,6 +297,7 @@ class App {
         this._scene = scene;
         this._state = State.LOSE;
     }
+
 }
 
 new App();
