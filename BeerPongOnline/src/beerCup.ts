@@ -1,4 +1,12 @@
-﻿import {AnimationGroup, Mesh, PBRMetallicRoughnessMaterial, Scene, Vector3} from "@babylonjs/core";
+﻿import {
+    AnimationGroup,
+    Material,
+    Mesh, PBRMaterial,
+    PBRMetallicRoughnessMaterial,
+    Scene,
+    StandardMaterial,
+    Vector3
+} from "@babylonjs/core";
 
 export class BeerCup {
 
@@ -11,23 +19,22 @@ export class BeerCup {
         this._scene = scene;
         this._colormtl = colormtl;
 
+        mesh.material = this._colormtl;
+
         this._loadBeerCups(mesh, position);
 
     }
 
     private _loadBeerCups(mesh: Mesh, position: Vector3) {
         this.mesh = mesh;
-        this.mesh.scaling = new Vector3(.16, .16, .16);
-        
+        this.mesh.scaling.scaleInPlace(7.8);
+
         const multiplier = new Vector3(1.6, 1, 2.8);
-        
-        //const offset = new Vector3(0, 3.15, -4);
-        const offset = new Vector3(0, 0, 0);
-        
+
         position = new Vector3(
-            position.x * multiplier.x + offset.x,
-            position.y * multiplier.y + offset.y, 
-            position.z * multiplier.z + offset.z           
+            position.x * multiplier.x,
+            position.y * multiplier.y,
+            position.z * multiplier.z
         )
 
         this.mesh.setAbsolutePosition(position);

@@ -12,7 +12,7 @@ import {
     StandardMaterial,
     Color3,
     Quaternion,
-    Matrix
+    Matrix, PointLight
 } from "@babylonjs/core";
 import {
     AdvancedDynamicTexture,
@@ -77,7 +77,7 @@ class App {
         // document.body.style.height = "100%";
         // document.body.style.margin = "0";
         // document.body.style.padding = "0";
-        
+
         const renderContainer = document.getElementById("app");
 
         //create the canvas html element and attach it to the webpage
@@ -202,8 +202,10 @@ class App {
 
     private async _initializeGameAsync(scene): Promise<void> {
         //temporary light to light the entire scene
-        var light0 = new HemisphericLight("HemiLight", new Vector3(0, 1, 0), scene);
-        
+        const light0 = new HemisphericLight("HemiLight", new Vector3(1, 1, 0), scene);
+
+        //const light1 = new PointLight("pointLight", new Vector3(1, 10 , 1), scene);
+
 
         //Create the player
         this._player = new Player(this.assets, scene/*, shadowGenerator*/);

@@ -1,4 +1,4 @@
-﻿import { TransformNode, Scene, Mesh, UniversalCamera, Vector3 } from "@babylonjs/core";
+﻿import {TransformNode, Scene, Mesh, UniversalCamera, Vector3} from "@babylonjs/core";
 
 export class Player extends TransformNode {
     public camera;
@@ -25,9 +25,9 @@ export class Player extends TransformNode {
     }
 
     private _setupPlayerCamera() {
-        
+
         //our actual camera that's pointing at our root's position
-        this.camera = new UniversalCamera("cam", new Vector3(0, 8.5, 10.5), this.scene);
+        this.camera = new UniversalCamera("cam", new Vector3(0, 8.5, 11), this.scene);
         //this.camera.lockedTarget = this._camRoot.position;
         this.camera.rotation = new Vector3(0.35, Math.PI, 0);
         this.camera.attachControl();
@@ -36,5 +36,5 @@ export class Player extends TransformNode {
         this.scene.activeCamera = this.camera;
         return this.camera;
     }
-    
+
 }
