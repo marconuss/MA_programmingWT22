@@ -174,7 +174,7 @@ export class Environment {
         const tableCollider = MeshBuilder.CreateBox("tableCollider", {depth: 14.35, width: 3.65, height: 4.125});
 
         tableCollider.bakeTransformIntoVertices(Matrix.Translation(0, 1, 0));
-        tableCollider.isVisible = true;
+        tableCollider.isVisible = false;
         tableCollider.isPickable = false;
         tableCollider.checkCollisions = true;
 

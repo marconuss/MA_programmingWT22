@@ -32,7 +32,7 @@ class App {
     private readonly _engine: Engine;
     private _environment;
     private _player: Player;
-    
+
     private _physicsEngine;
 
     //Scene - related
@@ -45,7 +45,7 @@ class App {
         // initialize babylon scene and engine
         this._engine = new Engine(this._canvas, true);
         this._scene = new Scene(this._engine);
-        
+
         this._physicsEngine = new CannonJSPlugin(true, 10, CANNON);
 
         // hide/show the Inspector
@@ -164,7 +164,7 @@ class App {
 
         scene.enablePhysics(new Vector3(0, -9.81, 0), this._physicsEngine);
 
-        //--CREATE ENVIRONMENT--
+        // create environment
         const environment = new Environment(scene);
         this._environment = environment;
         await this._environment.load();
@@ -173,9 +173,6 @@ class App {
         await this._loadPlayerAssets(scene);
 
         this._environment._createImpostors();
-        
-        this._physicsEngine.setEnabled(false);
-
     }
 
     private async _loadPlayerAssets(scene) {
@@ -189,25 +186,17 @@ class App {
             outer.checkCollisions = true;
 
             //move origin of box collider to the bottom of the mesh (to match player mesh)
-            outer.bakeTransformIntoVertices(Matrix.Translation(0, 1.5, 0))
+            //outer.bakeTransformIntoVertices(Matrix.Translation(0, 0.15, 0))
 
             var body = MeshBuilder.CreateSphere("body", {diameter: 0.3, segments: 32}, scene);
             var bodymtl = new StandardMaterial("white", scene);
             bodymtl.diffuseColor = new Color3(.9, .9, .9);
             body.material = bodymtl;
             body.isPickable = false;
-            body.bakeTransformIntoVertices(Matrix.Translation(0, 1.5, 0)); // simulates the imported mesh's origin
+            //body.bakeTransformIntoVertices(Matrix.Translation(0, 0.15, 0)); // simulates the imported mesh's origin
 
             body.parent = outer;
 
-            outer.physicsImpostor = new PhysicsImpostor(
-                outer,
-                PhysicsImpostor.SphereImpostor,
-                {mass: 0.3, restitution: 1}
-            );
-
-            
-            
             return {
                 mesh: outer as Mesh
             }
@@ -219,10 +208,18 @@ class App {
 
     }
 
-    //private _shootBall(ball, direction) {
-        // Apply an impulse to the ball in the given direction
-        //ball.physicsImpostor.applyImpulse(direction, ball.getAbsolutePosition());
-    //}
+    private _shootBall() {
+        //Apply an impulse to the ball in the given direction
+        const playerBall = this._scene.getMeshByName("outer");
+        playerBall.parent = null;
+        playerBall.physicsImpostor = new PhysicsImpostor(
+            playerBall,
+            PhysicsImpostor.SphereImpostor,
+            {mass: 0.3, restitution: 1},
+        );
+        const direction = new Vector3(0, 1, -1,);
+        playerBall.physicsImpostor.applyImpulse(direction, playerBall.position);
+    }
 
     private async _initializeGameAsync(scene): Promise<void> {
         //temporary light to light the entire scene
@@ -258,8 +255,9 @@ class App {
 
         //this handles interactions with the start button attached to the scene
         loseBtn.onPointerDownObservable.add(() => {
-            this._goToLose();
-            scene.detachControl(); //observables disabled
+            this._shootBall();
+            //this._goToLose();
+            //scene.detachControl(); //observables disabled
         });
 
         //primitive character and setting
@@ -270,7 +268,7 @@ class App {
 
         const playerBall = scene.getMeshByName("outer");
         playerBall.position = new Vector3(0, 5, 6.5);
-        //this._shootBall(playerBall, new Vector3(0, 2, -1));
+
         //get rid of start scene, switch to gamescene and change states
         this._scene.dispose();
         this._state = State.GAME;
