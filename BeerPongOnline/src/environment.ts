@@ -63,7 +63,9 @@ export class Environment {
         var ground = MeshBuilder.CreateGround("ground", {width: 24, height: 24}, this._scene);
         const groundmtl = new StandardMaterial("groundmtl", this._scene);
         groundmtl.diffuseTexture = new Texture("./assets/textures/Floor.png", this._scene, true, false);
+        groundmtl.roughness = 1.0;
         ground.material = groundmtl;
+
 
         ground.physicsImpostor = new PhysicsImpostor(
             ground,

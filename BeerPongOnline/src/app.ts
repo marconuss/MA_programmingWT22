@@ -3,20 +3,19 @@ import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import {
     CannonJSPlugin,
-    Color3,
-    Color4, DirectionalLight,
+    Color4,
     Engine,
-    FreeCamera, GUID,
+    FreeCamera,
     HemisphericLight,
-    Matrix,
-    Mesh,
-    MeshBuilder,
-    PhysicsImpostor,
     Scene,
-    StandardMaterial,
     Vector3
 } from "@babylonjs/core";
-import {AdvancedDynamicTexture, Button, Control, Slider} from "@babylonjs/gui";
+import {
+    AdvancedDynamicTexture,
+    Button,
+    Control,
+    Slider
+} from "@babylonjs/gui";
 import {Environment} from "./environment";
 import {Player} from "./player";
 import * as CANNON from "cannon";
@@ -51,7 +50,7 @@ class App {
         // hide/show the Inspector
         window.addEventListener("keydown", (ev) => {
             // Shift+Ctrl+Alt+I
-            if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.keyCode === 73) {
+            if (ev.key === "i") {
                 if (this._scene.debugLayer.isVisible()) {
                     this._scene.debugLayer.hide();
                 } else {
@@ -170,68 +169,19 @@ class App {
         await this._environment.load();
 
         // create player
-        await this._loadPlayerAssets(scene);
+
+        //Create the player
+        this._player = new Player(scene);
+        await this._player.loadPlayerAssets(scene);
 
         this._environment._createImpostors();
     }
 
-    private async _loadPlayerAssets(scene) {
-
-        async function loadPlayer() {
-
-            //collision mesh
-            const outer = MeshBuilder.CreateSphere("outer", {diameter: 0.3, segments: 32}, scene);
-            outer.isVisible = false;
-            outer.isPickable = false;
-            outer.checkCollisions = true;
-
-            //move origin of box collider to the bottom of the mesh (to match player mesh)
-            //outer.bakeTransformIntoVertices(Matrix.Translation(0, 0.15, 0))
-
-            var body = MeshBuilder.CreateSphere("body", {diameter: 0.3, segments: 32}, scene);
-            var bodymtl = new StandardMaterial("white", scene);
-            bodymtl.diffuseColor = new Color3(.9, .9, .9);
-            body.material = bodymtl;
-            body.isPickable = false;
-            //body.bakeTransformIntoVertices(Matrix.Translation(0, 0.15, 0)); // simulates the imported mesh's origin
-
-            body.parent = outer;
-
-            return {
-                mesh: outer as Mesh
-            }
-        }
-
-        return loadPlayer().then(assets => {
-            this.assets = assets;
-        })
-
-    }
-
-    private _shootBall(direction: number, strength: number) {
-        //Apply an impulse to the ball in the given direction
-        const playerBall = this._scene.getMeshByName("outer");
-        playerBall.parent = null;
-        playerBall.physicsImpostor = new PhysicsImpostor(
-            playerBall,
-            PhysicsImpostor.SphereImpostor,
-            {mass: 0.3, restitution: 1},
-        );
-        
-        const forceVector = new Vector3(direction, 1, strength);
-        
-        playerBall.physicsImpostor.applyImpulse(forceVector, playerBall.position);
-    }
 
     private async _initializeGameAsync(scene): Promise<void> {
         //temporary light to light the entire scene
         const light0 = new HemisphericLight("HemiLight", new Vector3(1, 1, 0), scene);
 
-        //const light1 = new PointLight("pointLight", new Vector3(1, 10 , 1), scene);
-
-
-        //Create the player
-        this._player = new Player(this.assets, scene/*, shadowGenerator*/);
     }
 
     private async _goToGame() {
@@ -265,7 +215,7 @@ class App {
         shootBtn.thickness = 0;
         shootBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
         playerUI.addControl(shootBtn);
-        
+
         const directionSlider = new Slider();
         directionSlider.minimum = -0.5;
         directionSlider.maximum = 0.5;
@@ -292,28 +242,28 @@ class App {
         strenghtSlider.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
         strenghtSlider.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
         playerUI.addControl(strenghtSlider);
-        
+
         let direction = directionSlider.value;
         let strength = -strenghtSlider.value;
         directionSlider.onValueChangedObservable.add(updateForce);
 
         strenghtSlider.onValueChangedObservable.add(updateForce);
-        
-        function updateForce(){
+
+        function updateForce() {
             direction = directionSlider.value;
-            strength = -strenghtSlider.value; 
+            strength = -strenghtSlider.value;
         }
 
         //this handles interactions with the start button attached to the scene
         loseBtn.onPointerDownObservable.add(() => {
-            
+
             this._goToLose();
             scene.detachControl(); //observables disabled
         });
 
         shootBtn.onPointerDownObservable.add(() => {
 
-            this._shootBall(direction, strength);
+            this._player._shootBall(new Vector3(direction, 1, strength));
         });
 
         //primitive character and setting
@@ -322,9 +272,6 @@ class App {
         //--WHEN SCENE FINISHED LOADING--
         await scene.whenReadyAsync();
 
-        const playerBall = scene.getMeshByName("outer");
-        playerBall.position = new Vector3(0, 5, 6.5);        
-        
         //get rid of start scene, switch to gamescene and change states
         this._scene.dispose();
         this._state = State.GAME;

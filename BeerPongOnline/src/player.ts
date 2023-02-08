@@ -1,25 +1,63 @@
-﻿import {Mesh, Scene, TransformNode, UniversalCamera, Vector3} from "@babylonjs/core";
+﻿import {
+    Color3,
+    Mesh,
+    MeshBuilder,
+    PhysicsImpostor,
+    Scene,
+    StandardMaterial,
+    UniversalCamera,
+    Vector3
+} from "@babylonjs/core";
 
-export class Player extends TransformNode {
+export class Player {
+
     //constant values
-    private static readonly ORIGINAL_TILT: Vector3 = new Vector3(0.7, 0, 0);
     public camera;
     public scene: Scene;
-    //Player
-    public mesh: Mesh; //outer collisionbox of player
-    private _input;
 
-    constructor(assets, scene: Scene, /*shadowGenerator: ShadowGenerator,*/ input?) {
-        super("player", scene);
+    //Player
+    public playerMesh: Mesh;
+    public playerCollider: Mesh;
+
+    //public player: TransformNode;
+
+    constructor(scene: Scene) {
         this.scene = scene;
         this._setupPlayerCamera();
+        //this.player = new TransformNode("player", this.scene);
+    }
 
-        this.mesh = assets.mesh;
-        this.mesh.parent = this;
+    public async loadPlayerAssets(scene) {
 
-        //shadowGenerator.addShadowCaster(assets.mesh); //the player mesh will cast shadows
+        this.playerCollider = MeshBuilder.CreateSphere("playerCollider", {diameter: 0.3, segments: 16}, scene);
+        this.playerCollider.isVisible = false;
+        this.playerCollider.isPickable = false;
+        this.playerCollider.checkCollisions = true;
 
-        this._input = input; //inputs we will get from inputController.ts
+        this.playerMesh = MeshBuilder.CreateSphere("ball", {diameter: 0.3, segments: 16}, scene);
+        const ballMtl = new StandardMaterial("white", scene);
+        ballMtl.diffuseColor = new Color3(.9, .9, .9);
+        this.playerMesh.material = ballMtl;
+        this.playerMesh.isPickable = false;
+
+        this.playerMesh.parent = this.playerCollider;
+        //this.playerCollider.parent = this.player;
+
+        this.playerCollider.position = new Vector3(0, 7, 6.5);
+    }
+
+    public _shootBall(forceVector: Vector3) {
+
+        //Apply an impulse to the ball in the given direction
+        this.playerCollider.parent = null;
+        this.playerCollider.physicsImpostor = new PhysicsImpostor(
+            this.playerCollider,
+            PhysicsImpostor.SphereImpostor,
+            {mass: 0.3, restitution: 1},
+        );
+
+        this.playerCollider.physicsImpostor.applyImpulse(forceVector, this.playerCollider.position);
+
     }
 
     private _setupPlayerCamera() {
