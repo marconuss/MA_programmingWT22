@@ -1,15 +1,13 @@
-﻿import {TransformNode, Scene, Mesh, UniversalCamera, Vector3} from "@babylonjs/core";
+﻿import {Mesh, Scene, TransformNode, UniversalCamera, Vector3} from "@babylonjs/core";
 
 export class Player extends TransformNode {
-    public camera;
-    public scene: Scene;
-    private _input;
-
-    //Player
-    public mesh: Mesh; //outer collisionbox of player
-
     //constant values
     private static readonly ORIGINAL_TILT: Vector3 = new Vector3(0.7, 0, 0);
+    public camera;
+    public scene: Scene;
+    //Player
+    public mesh: Mesh; //outer collisionbox of player
+    private _input;
 
     constructor(assets, scene: Scene, /*shadowGenerator: ShadowGenerator,*/ input?) {
         super("player", scene);

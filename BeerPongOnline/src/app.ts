@@ -2,23 +2,21 @@
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import {
-    Engine,
-    Scene,
-    Vector3,
-    HemisphericLight,
-    Mesh, MeshBuilder,
-    FreeCamera,
-    Color4,
-    StandardMaterial,
+    CannonJSPlugin,
     Color3,
-    Quaternion,
-    Matrix, PointLight, CubeTexture, PhysicsImpostor, CannonJSPlugin
+    Color4,
+    Engine,
+    FreeCamera,
+    HemisphericLight,
+    Matrix,
+    Mesh,
+    MeshBuilder,
+    PhysicsImpostor,
+    Scene,
+    StandardMaterial,
+    Vector3
 } from "@babylonjs/core";
-import {
-    AdvancedDynamicTexture,
-    Button,
-    Control
-} from "@babylonjs/gui";
+import {AdvancedDynamicTexture, Button, Control} from "@babylonjs/gui";
 import {Environment} from "./environment";
 import {Player} from "./player";
 import * as CANNON from "cannon";
@@ -26,16 +24,16 @@ import * as CANNON from "cannon";
 enum State { START = 0, GAME = 1, LOSE = 2 }
 
 class App {
+    //Game State Related
+    public assets;
     // General Entire Application
     private _scene: Scene;
     private _canvas: HTMLCanvasElement;
     private readonly _engine: Engine;
-
-    //Game State Related
-    public assets;
     private _environment;
     private _player: Player;
-
+    
+    private _physicsEngine;
 
     //Scene - related
     private _state: State = 0;
@@ -47,6 +45,8 @@ class App {
         // initialize babylon scene and engine
         this._engine = new Engine(this._canvas, true);
         this._scene = new Scene(this._engine);
+        
+        this._physicsEngine = new CannonJSPlugin(true, 10, CANNON);
 
         // hide/show the Inspector
         window.addEventListener("keydown", (ev) => {
@@ -162,6 +162,8 @@ class App {
         let scene = new Scene(this._engine);
         this._gamescene = scene;
 
+        scene.enablePhysics(new Vector3(0, -9.81, 0), this._physicsEngine);
+
         //--CREATE ENVIRONMENT--
         const environment = new Environment(scene);
         this._environment = environment;
@@ -170,6 +172,9 @@ class App {
         // create player
         await this._loadPlayerAssets(scene);
 
+        this._environment._createImpostors();
+        
+        this._physicsEngine.setEnabled(false);
 
     }
 
@@ -195,6 +200,14 @@ class App {
 
             body.parent = outer;
 
+            outer.physicsImpostor = new PhysicsImpostor(
+                outer,
+                PhysicsImpostor.SphereImpostor,
+                {mass: 0.3, restitution: 1}
+            );
+
+            
+            
             return {
                 mesh: outer as Mesh
             }
@@ -205,6 +218,11 @@ class App {
         })
 
     }
+
+    //private _shootBall(ball, direction) {
+        // Apply an impulse to the ball in the given direction
+        //ball.physicsImpostor.applyImpulse(direction, ball.getAbsolutePosition());
+    //}
 
     private async _initializeGameAsync(scene): Promise<void> {
         //temporary light to light the entire scene
@@ -249,15 +267,10 @@ class App {
 
         //--WHEN SCENE FINISHED LOADING--
         await scene.whenReadyAsync();
-        
+
         const playerBall = scene.getMeshByName("outer");
         playerBall.position = new Vector3(0, 5, 6.5);
-        playerBall.physicsImpostor = new PhysicsImpostor(
-            playerBall,
-            PhysicsImpostor.SphereImpostor,
-            {mass: 1, restitution: 0}
-        );
-
+        //this._shootBall(playerBall, new Vector3(0, 2, -1));
         //get rid of start scene, switch to gamescene and change states
         this._scene.dispose();
         this._state = State.GAME;

@@ -1,22 +1,23 @@
 ﻿import {
-    Scene,
+    CubeTexture,
+    Matrix,
     Mesh,
-    Vector3,
-    SceneLoader,
     MeshBuilder,
-    TransformNode,
-    PBRMetallicRoughnessMaterial, 
-    Texture, 
+    PBRMetallicRoughnessMaterial,
+    PhysicsImpostor,
+    Scene,
+    SceneLoader,
     StandardMaterial,
-    CubeTexture, 
-    PhysicsImpostor, 
-    CannonJSPlugin
+    Texture,
+    TransformNode,
+    Vector3
 } from "@babylonjs/core";
 import {BeerCup} from "./beerCup";
-import CANNON from "cannon";
 
 export class Environment {
     private _scene: Scene;
+
+    private _assets;
 
     //Meshes
     private _opBeerCupObjs: Array<BeerCup>;
@@ -58,7 +59,6 @@ export class Environment {
     }
 
     public async load() {
-        this._scene.enablePhysics(new Vector3(0, -9.81, 0), new CannonJSPlugin(true, 10, CANNON));
 
         var ground = MeshBuilder.CreateGround("ground", {width: 24, height: 24}, this._scene);
         const groundmtl = new StandardMaterial("groundmtl", this._scene);
@@ -72,13 +72,14 @@ export class Environment {
         );
 
 
-        const assets = await this.loadAssets()
+        this._assets = await this.loadAssets()
         const scaleMultiplier = 5;
 
-        assets.table.checkCollisions = true;
-        assets.table.addRotation(0, 0, Math.PI / 2);
-        assets.table.scaling.scaleInPlace(scaleMultiplier);
-        assets.table.material = this._tableMtl;
+        //this._assets.table.checkCollisions = true;
+        this._assets.table.addRotation(0, 0, Math.PI / 2);
+        this._assets.table.scaling.scaleInPlace(scaleMultiplier);
+        this._assets.table.position.y = -1.05;
+        this._assets.table.material = this._tableMtl;
 
         /*
         assets.allMeshes.forEach((m) => {
@@ -103,11 +104,11 @@ export class Environment {
         ];
 
         // opponent beer cups
-        assets.beerCup.isVisible = false;
+        this._assets.beerCup.isVisible = false;
 
         const opBeerCupsHolder = new TransformNode("opBeerCupsHolder", this._scene);
         for (let i = 0; i < 10; i++) {
-            let beerCupInstance = assets.beerCup.clone("opBeerCup " + i);
+            let beerCupInstance = this._assets.beerCup.clone("opBeerCup " + i);
             beerCupInstance.isVisible = true;
             beerCupInstance.setParent(opBeerCupsHolder);
 
@@ -127,7 +128,7 @@ export class Environment {
         // player's beer cups
         const plBeerCupsHolder = new TransformNode("plBeerCupsHolder", this._scene);
         for (let i = 0; i < 10; i++) {
-            let beerCupInstance = assets.beerCup.clone("plBeerCup " + i);
+            let beerCupInstance = this._assets.beerCup.clone("plBeerCup " + i);
             beerCupInstance.isVisible = true;
             beerCupInstance.setParent(plBeerCupsHolder);
 
@@ -146,9 +147,7 @@ export class Environment {
         plBeerCupsHolder.position = new Vector3(0, 4.15, 4.5);
 
 
-        assets.beerCup.dispose();
-
-        this._createImpostors();
+        this._assets.beerCup.dispose();
     }
 
     public async loadAssets() {
@@ -170,15 +169,21 @@ export class Environment {
         }
     }
 
-    private _createImpostors(): void {
+    public _createImpostors(): void {
 
-        const sphere = MeshBuilder.CreateSphere("sphere1", {diameter: 2, segments: 16});
-        sphere.position.y = 8;
+        const tableCollider = MeshBuilder.CreateBox("tableCollider", {depth: 14.35, width: 3.65, height: 4.125});
 
-        sphere.physicsImpostor = new PhysicsImpostor(
-            sphere,
-            PhysicsImpostor.SphereImpostor,
-            {mass: 0.2, restitution: 1}
+        tableCollider.bakeTransformIntoVertices(Matrix.Translation(0, 1, 0));
+        tableCollider.isVisible = true;
+        tableCollider.isPickable = false;
+        tableCollider.checkCollisions = true;
+
+        this._assets.table.parent = tableCollider;
+
+        tableCollider.physicsImpostor = new PhysicsImpostor(
+            tableCollider,
+            PhysicsImpostor.BoxImpostor,
+            {mass: 0, restitution: 0.8}
         );
 
     }

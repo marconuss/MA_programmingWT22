@@ -1,12 +1,4 @@
-﻿import {
-    AnimationGroup,
-    Material,
-    Mesh, PBRMaterial,
-    PBRMetallicRoughnessMaterial,
-    Scene,
-    StandardMaterial,
-    Vector3
-} from "@babylonjs/core";
+﻿import {Mesh, PBRMetallicRoughnessMaterial, Scene, Vector3} from "@babylonjs/core";
 
 export class BeerCup {
 
