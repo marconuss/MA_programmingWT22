@@ -4,6 +4,7 @@
   },
   "devDependencies": {
     "@babylonjs/core": "^5.45.1",
+    "@babylonjs/gui": "^5.45.1",
     "@babylonjs/inspector": "^5.45.1"
   }
 }

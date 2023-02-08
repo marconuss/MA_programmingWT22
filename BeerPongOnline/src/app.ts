@@ -4,9 +4,9 @@ import "@babylonjs/loaders/glTF";
 import {
     CannonJSPlugin,
     Color3,
-    Color4,
+    Color4, DirectionalLight,
     Engine,
-    FreeCamera,
+    FreeCamera, GUID,
     HemisphericLight,
     Matrix,
     Mesh,
@@ -16,7 +16,7 @@ import {
     StandardMaterial,
     Vector3
 } from "@babylonjs/core";
-import {AdvancedDynamicTexture, Button, Control} from "@babylonjs/gui";
+import {AdvancedDynamicTexture, Button, Control, Slider} from "@babylonjs/gui";
 import {Environment} from "./environment";
 import {Player} from "./player";
 import * as CANNON from "cannon";
@@ -208,7 +208,7 @@ class App {
 
     }
 
-    private _shootBall() {
+    private _shootBall(direction: number, strength: number) {
         //Apply an impulse to the ball in the given direction
         const playerBall = this._scene.getMeshByName("outer");
         playerBall.parent = null;
@@ -217,8 +217,10 @@ class App {
             PhysicsImpostor.SphereImpostor,
             {mass: 0.3, restitution: 1},
         );
-        const direction = new Vector3(0, 1, -1,);
-        playerBall.physicsImpostor.applyImpulse(direction, playerBall.position);
+        
+        const forceVector = new Vector3(direction, 1, strength);
+        
+        playerBall.physicsImpostor.applyImpulse(forceVector, playerBall.position);
     }
 
     private async _initializeGameAsync(scene): Promise<void> {
@@ -244,20 +246,74 @@ class App {
         scene.detachControl();
 
         //create a simple button
-        const loseBtn = Button.CreateSimpleButton("lose", "LOSE");
+        const loseBtn = Button.CreateSimpleButton("lose", "MENU");
         loseBtn.width = 0.2
         loseBtn.height = "40px";
         loseBtn.color = "white";
         loseBtn.top = "-14px";
         loseBtn.thickness = 0;
+        loseBtn.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
         loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
         playerUI.addControl(loseBtn);
 
+        const shootBtn = Button.CreateSimpleButton("lose", "SHOOT");
+        shootBtn.width = 0.2
+        shootBtn.height = "40px";
+        shootBtn.color = "white";
+        shootBtn.top = "-14px";
+        shootBtn.background = "green";
+        shootBtn.thickness = 0;
+        shootBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+        playerUI.addControl(shootBtn);
+        
+        const directionSlider = new Slider();
+        directionSlider.minimum = -0.5;
+        directionSlider.maximum = 0.5;
+        directionSlider.value = 0;
+        directionSlider.height = "20px";
+        directionSlider.width = "150px";
+        directionSlider.color = "#003399";
+        directionSlider.background = "grey";
+        directionSlider.left = "120px";
+        directionSlider.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+        directionSlider.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
+        playerUI.addControl(directionSlider);
+
+        const strenghtSlider = new Slider();
+        strenghtSlider.minimum = 1;
+        strenghtSlider.maximum = 5;
+        strenghtSlider.value = 1;
+        strenghtSlider.height = "20px";
+        strenghtSlider.width = "150px";
+        strenghtSlider.color = "#003399";
+        strenghtSlider.background = "grey";
+        strenghtSlider.left = "120px";
+        strenghtSlider.top = "50px";
+        strenghtSlider.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+        strenghtSlider.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
+        playerUI.addControl(strenghtSlider);
+        
+        let direction = directionSlider.value;
+        let strength = -strenghtSlider.value;
+        directionSlider.onValueChangedObservable.add(updateForce);
+
+        strenghtSlider.onValueChangedObservable.add(updateForce);
+        
+        function updateForce(){
+            direction = directionSlider.value;
+            strength = -strenghtSlider.value; 
+        }
+
         //this handles interactions with the start button attached to the scene
         loseBtn.onPointerDownObservable.add(() => {
-            this._shootBall();
-            //this._goToLose();
-            //scene.detachControl(); //observables disabled
+            
+            this._goToLose();
+            scene.detachControl(); //observables disabled
+        });
+
+        shootBtn.onPointerDownObservable.add(() => {
+
+            this._shootBall(direction, strength);
         });
 
         //primitive character and setting
@@ -267,8 +323,8 @@ class App {
         await scene.whenReadyAsync();
 
         const playerBall = scene.getMeshByName("outer");
-        playerBall.position = new Vector3(0, 5, 6.5);
-
+        playerBall.position = new Vector3(0, 5, 6.5);        
+        
         //get rid of start scene, switch to gamescene and change states
         this._scene.dispose();
         this._state = State.GAME;
