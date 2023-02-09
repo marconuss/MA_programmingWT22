@@ -6,7 +6,7 @@ import {
     Color4,
     Engine,
     FreeCamera,
-    HemisphericLight,
+    HemisphericLight, MeshBuilder,
     Scene,
     Vector3
 } from "@babylonjs/core";
@@ -19,6 +19,7 @@ import {
 import {Environment} from "./environment";
 import {Player} from "./player";
 import * as CANNON from "cannon";
+import {Client, Room} from "colyseus.js";
 
 enum State { START = 0, GAME = 1, LOSE = 2 }
 
@@ -37,6 +38,8 @@ class App {
     //Scene - related
     private _state: State = 0;
     private _gamescene: Scene;
+    
+    private _room: Room;
 
     constructor() {
         this._canvas = this._createCanvas();
@@ -84,9 +87,55 @@ class App {
         this._canvas = document.createElement("canvas");
         this._canvas.id = "gameCanvas";
         renderContainer.appendChild(this._canvas);
-
+        
+        this._connectToServer();
+        
         return this._canvas;
     }
+    
+    private async _connectToServer(){
+        
+        const colyseuSDK = new Client("ws://localhost:2567");
+
+        this._room = await colyseuSDK.joinOrCreate("my_room");
+        
+        let playerEntities = {};
+        
+        var playerForceVector = Vector3.Zero();
+        
+        this._room.state.players.onAdd((player, sessionId) =>{
+          var sphere = MeshBuilder.CreateSphere(`player-${sessionId}`, {
+              segments: 16, diameter: 0.3
+          });
+          
+          sphere.position = new Vector3(0, 7, -6.5);
+          
+          playerForceVector.x = player.direction;
+          playerForceVector.y = player.strength;
+          
+          playerEntities[sessionId] = sphere;
+          
+        })
+        
+        this._room.state.players.onAdd(function (player, sessionId){
+            player.onChange(function () {
+                playerEntities[sessionId].strength = player.strength;
+                playerEntities[sessionId].direction = player.direction;
+            })
+        })
+
+        colyseuSDK
+            .joinOrCreate("my_room")
+            .then(function (room){
+                console.log("Connected to roodId: " + room.id);
+
+            })
+            .catch(function (error){
+                console.log("Couldn't connect." + error.code);
+            })
+
+    }
+    
 
     private async _main(): Promise<void> {
         await this._goToStart();
@@ -264,8 +313,13 @@ class App {
         shootBtn.onPointerDownObservable.add(() => {
 
             this._player._shootBall(new Vector3(direction, 1, strength));
+            
+            this._room.send("message", {
+                direction: direction,
+                strength: strength
+            })
         });
-
+        
         //primitive character and setting
         await this._initializeGameAsync(scene);
 
