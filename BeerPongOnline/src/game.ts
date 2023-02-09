@@ -1,6 +1,7 @@
 ﻿import {Color3, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3} from "@babylonjs/core";
 import {Room} from "colyseus.js";
 import Menu from "./menu";
+import {Environment} from "./environment";
 
 
 export default class Game {
@@ -49,9 +50,10 @@ export default class Game {
     }
     
     
-    initEnvironment(): void {
-        
-        
+    private async initEnvironment() {
+
+        const environment = new Environment(this._scene);
+        await environment.load();
         
     }
     
@@ -59,8 +61,5 @@ export default class Game {
         const menu = new Menu(this._scene);
         menu.createMenu();
     }
-    
-    
-    
     
 }
