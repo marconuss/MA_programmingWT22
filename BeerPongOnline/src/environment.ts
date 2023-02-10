@@ -1,5 +1,6 @@
 ﻿import {
-    CubeTexture,
+    CubeTexture, 
+    HemisphericLight,
     Matrix,
     Mesh,
     MeshBuilder,
@@ -18,33 +19,25 @@ export class Environment {
     private _scene: Scene;
 
     private _assets;
+    private _materials;
 
     //Meshes
     private _opBeerCupObjs: Array<BeerCup>;
     private _plBeerCupObjs: Array<BeerCup>;
-    private _blueCupMtl: PBRMetallicRoughnessMaterial;
-    private _redCupMtl: PBRMetallicRoughnessMaterial;
-    private _tableMtl: PBRMetallicRoughnessMaterial;
 
     constructor(scene: Scene) {
         this._scene = scene;
 
         this._opBeerCupObjs = [];
         this._plBeerCupObjs = [];
-
-        this._blueCupMtl = new PBRMetallicRoughnessMaterial("Blue beer cup", this._scene);
-
-        this._redCupMtl = new PBRMetallicRoughnessMaterial("Red beer cup", this._scene);
-
-        this._tableMtl = new PBRMetallicRoughnessMaterial("Table material", this._scene);
-        
-        this._loadMaterials();
         
         // environmental textures for reflections on PBR materials
         this._scene.environmentTexture = new CubeTexture("./assets/textures/Sky.env", scene);;
     }
 
     public async load() {
+
+        const light0 = new HemisphericLight("HemiLight", new Vector3(1, 1, 0), this._scene);
 
         var ground = MeshBuilder.CreateGround("ground", {width: 24, height: 24}, this._scene);
         const groundmtl = new StandardMaterial("groundmtl", this._scene);
@@ -60,14 +53,15 @@ export class Environment {
         );
 
 
-        this._assets = await this.loadAssets()
+        this._assets = await this.loadAssets();
+        this._materials = await this._loadMaterials();
         const scaleMultiplier = 5;
 
         //this._assets.table.checkCollisions = true;
         this._assets.table.addRotation(0, 0, Math.PI / 2);
         this._assets.table.scaling.scaleInPlace(scaleMultiplier);
         this._assets.table.position.y = -1.05;
-        this._assets.table.material = this._tableMtl;
+        this._assets.table.material = this._materials.tableMat;
 
         /*
         assets.allMeshes.forEach((m) => {
@@ -117,8 +111,9 @@ export class Environment {
             
 
             //Create the new beerCup object
+            
             let newOpBeerCup = new BeerCup(
-                this._blueCupMtl,
+                this._materials.blueCupMat,
                 beerCupCollider,
                 beerCupInstance,
                 this._scene,
@@ -155,7 +150,7 @@ export class Environment {
             plCupPosition.z = -cupsPositions[i].z
 
             let newPlBeerCup = new BeerCup(
-                this._redCupMtl,
+                this._materials.redCupMat,
                 beerCupCollider,
                 beerCupInstance,
                 this._scene,
@@ -188,21 +183,33 @@ export class Environment {
         }
     }
     
-    private _loadMaterials(): void{
+    private async _loadMaterials(){
+        
         // blue cup material
-        this._blueCupMtl.baseTexture = new Texture("/assets/textures/BeerCupBlue.png", this._scene, true, false);
-        this._blueCupMtl.roughness = 0.2;
-        this._blueCupMtl.metallic = 0;
+        const blueCupMat = new PBRMetallicRoughnessMaterial("Blue beer cup", this._scene);
+        blueCupMat.baseTexture = new Texture("/assets/textures/BeerCupBlue.png", this._scene, true, false);
+        blueCupMat.roughness = 0.2;
+        blueCupMat.metallic = 0;
         
         // red cup material
-        this._redCupMtl.baseTexture = new Texture("/assets/textures/BeerCupRed.png", this._scene, true, false);
-        this._redCupMtl.roughness = 0.2;
-        this._redCupMtl.metallic = 0;
+        const redCupMat = new PBRMetallicRoughnessMaterial("Red beer cup", this._scene);
+        redCupMat.baseTexture = new Texture("/assets/textures/BeerCupRed.png", this._scene, true, false);
+        redCupMat.roughness = 0.2;
+        redCupMat.metallic = 0;
         
         //table material
-        this._tableMtl.baseTexture = new Texture("./assets/textures/Table.png", this._scene, true, false);
-        this._tableMtl.roughness = 0.5;
-        this._tableMtl.metallic = 0;
+        const tableMat = new PBRMetallicRoughnessMaterial("Table material", this._scene);
+        tableMat.baseTexture = new Texture("./assets/textures/Table.png", this._scene, true, false);
+        tableMat.roughness = 0.5;
+        tableMat.metallic = 0;
+        
+        return{
+            blueCupMat : blueCupMat as PBRMetallicRoughnessMaterial,
+            redCupMat : redCupMat as PBRMetallicRoughnessMaterial, 
+            tableMat : tableMat as PBRMetallicRoughnessMaterial
+        }
+        
+        
     }
 
     private _createImpostors(): void {
@@ -232,5 +239,56 @@ export class Environment {
         })
         
 
+    }
+    
+    
+    private _loadBeerCups(name: string, mesh:Mesh, material: PBRMetallicRoughnessMaterial, positionOffset: Vector3){
+
+        const cupsPositions: Vector3[] = [
+            new Vector3(0, 0, 0),
+            new Vector3(0.25, 0, -0.25),
+            new Vector3(-0.25, 0, -0.25),
+            new Vector3(0.5, 0, -0.5),
+            new Vector3(0, 0, -0.5),
+            new Vector3(-0.5, 0, -0.5),
+            new Vector3(0.75, 0, -0.75),
+            new Vector3(0.25, 0, -0.75),
+            new Vector3(-0.25, 0, -0.75),
+            new Vector3(-0.75, 0, -0.75)
+        ];
+
+        const positionMultiplier = new Vector3(1.6, 1, 2.8);
+                
+        for (let i = 0; i < 10; i++) {
+            
+            // create clone from the beercup mesh
+            const beerCupInstance = mesh.clone(name + i);
+            beerCupInstance.isVisible = true;
+            beerCupInstance.material = material;
+            beerCupInstance.position = Vector3.Zero();
+
+            // create collider mesh
+            const beerCupCollider = MeshBuilder.CreateCylinder(beerCupInstance.name + "_root", { height: 0.6, diameterTop: 0.5, diameterBottom:0.3 }, this._scene);
+            beerCupCollider.isVisible = false;
+            beerCupCollider.bakeTransformIntoVertices(Matrix.Translation(0, 0.3, 0));
+            
+            // parenting
+            beerCupInstance.setParent(beerCupCollider);
+            beerCupCollider.parent = null;
+            
+            // arrange beer cups
+            beerCupCollider.position = new Vector3(
+                cupsPositions[i].x * positionMultiplier.x + positionOffset.x,
+                cupsPositions[i].y * positionMultiplier.y + positionOffset.y,
+                cupsPositions[i].z * positionMultiplier.z + positionOffset.z
+            );
+            
+            // create physics Impostor for collider mesh
+            beerCupCollider.physicsImpostor = new PhysicsImpostor(
+                beerCupCollider,
+                PhysicsImpostor.CylinderImpostor,
+                {mass: 0, restitution: 0}
+            );
+        }
     }
 }

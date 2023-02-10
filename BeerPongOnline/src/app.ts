@@ -20,6 +20,7 @@ import {Environment} from "./environment";
 import {Player} from "./player";
 import * as CANNON from "cannon";
 import {Client, Room} from "colyseus.js";
+import Game from "./game";
 
 enum State { START = 0, GAME = 1, LOSE = 2 }
 
@@ -32,6 +33,7 @@ class App {
     private readonly _engine: Engine;
     private _environment;
     private _player: Player;
+    private _game: Game;
 
     private _physicsEngine;
 
@@ -48,6 +50,7 @@ class App {
         this._engine = new Engine(this._canvas, true);
         this._scene = new Scene(this._engine);
 
+        // initialize physics engine
         this._physicsEngine = new CannonJSPlugin(true, 10, CANNON);
 
         // hide/show the Inspector
@@ -61,6 +64,9 @@ class App {
                 }
             }
         });
+
+        // connect to server
+        this._connectToServer();
 
         // run the main render loop
         this._main();
@@ -87,8 +93,6 @@ class App {
         this._canvas = document.createElement("canvas");
         this._canvas.id = "gameCanvas";
         renderContainer.appendChild(this._canvas);
-        
-        this._connectToServer();
         
         return this._canvas;
     }
@@ -138,6 +142,7 @@ class App {
     
 
     private async _main(): Promise<void> {
+        
         await this._goToStart();
 
         // Register a render loop to repeatedly render the scene
@@ -164,17 +169,17 @@ class App {
     }
 
     private async _goToStart() {
+        
         this._engine.displayLoadingUI();
 
         this._scene.detachControl();
         let scene = new Scene(this._engine);
         scene.clearColor = new Color4(0, 0, 0, 1);
-        let camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
-        camera.setTarget(Vector3.Zero());
+        //let camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
+        //camera.setTarget(Vector3.Zero());
 
         //create a fullscreen ui for all of our GUI elements
         const guiMenu = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        guiMenu.idealHeight = 720; //fit our fullscreen ui to this height
 
         //create a simple button
         const startBtn = Button.CreateSimpleButton("start", "PLAY");
@@ -207,31 +212,38 @@ class App {
     }
 
     private async _setUpGame() {
+
         let scene = new Scene(this._engine);
         this._gamescene = scene;
+        
+        this._game = new Game(scene, this._room);
 
         scene.enablePhysics(new Vector3(0, -9.81, 0), this._physicsEngine);
-
+        console.log("enable physics");
+        
         // create environment
-        const environment = new Environment(scene);
-        this._environment = environment;
-        await this._environment.load();
+        await this._game.initEnvironment();
+        // const environment = new Environment(scene);
+        // this._environment = environment;
+        // await this._environment.load();
 
         // create player
 
         //Create the player
-        this._player = new Player(scene);
-        await this._player.loadPlayerAssets(scene);
+        await this._game.initPlayers();
+        // this._player = new Player(scene);
+        // await this._player.loadPlayerAssets(scene);
 
-        this._environment._createImpostors();
+        //this._environment._createImpostors();
     }
 
-
+    /*
     private async _initializeGameAsync(scene): Promise<void> {
         //temporary light to light the entire scene
-        const light0 = new HemisphericLight("HemiLight", new Vector3(1, 1, 0), scene);
+
 
     }
+     */
 
     private async _goToGame() {
         //--SETUP SCENE--
@@ -254,7 +266,8 @@ class App {
         loseBtn.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
         loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
         playerUI.addControl(loseBtn);
-
+        /*
+        
         const shootBtn = Button.CreateSimpleButton("lose", "SHOOT");
         shootBtn.width = 0.2
         shootBtn.height = "40px";
@@ -302,6 +315,7 @@ class App {
             direction = directionSlider.value;
             strength = -strenghtSlider.value;
         }
+         */
 
         //this handles interactions with the start button attached to the scene
         loseBtn.onPointerDownObservable.add(() => {
@@ -310,6 +324,8 @@ class App {
             scene.detachControl(); //observables disabled
         });
 
+        /*
+       
         shootBtn.onPointerDownObservable.add(() => {
 
             this._player._shootBall(new Vector3(direction, 1, strength));
@@ -319,9 +335,10 @@ class App {
                 strength: strength
             })
         });
+         */
         
         //primitive character and setting
-        await this._initializeGameAsync(scene);
+        //await this._initializeGameAsync(scene);
 
         //--WHEN SCENE FINISHED LOADING--
         await scene.whenReadyAsync();
