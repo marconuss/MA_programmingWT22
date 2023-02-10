@@ -64,7 +64,10 @@ export default class Game {
         
         await this.initEnvironment();
         
-        //await this.initPlayers();
+        await this.initPlayers();
+        
+        this._displayGameControls();
+        
         this.doRender();
     }
 
@@ -73,6 +76,7 @@ export default class Game {
         this._player = new Player(this._scene);
         await this._player.loadPlayerAssets(this._scene);
         
+        /*
         this._room.state.players.onAdd((player, sessionId) => {
 
             const isCurrentPlayer = (sessionId === this._room.sessionId);
@@ -99,6 +103,8 @@ export default class Game {
                 this._playerStrength[sessionId] = player.strength;
             });
         });
+        
+         */
         
         this._room.onLeave(() => {
             //this._goToMenu();
