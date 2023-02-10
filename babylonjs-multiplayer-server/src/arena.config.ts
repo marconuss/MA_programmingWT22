@@ -7,13 +7,13 @@ import { monitor } from "@colyseus/monitor";
 import { MyRoom } from "./rooms/MyRoom";
 
 export default Arena({
-    getId: () => "Your Colyseus App",
+    getId: () => "Beer Pong Online",
 
     initializeGameServer: (gameServer) => {
         /**
          * Define your room handlers:
          */
-        gameServer.define('my_room', MyRoom);
+        gameServer.define('pub', MyRoom);
 
     },
 

@@ -38,39 +38,26 @@ export class Environment {
     public async load() {
 
         const light0 = new HemisphericLight("HemiLight", new Vector3(1, 1, 0), this._scene);
-
-        var ground = MeshBuilder.CreateGround("ground", {width: 24, height: 24}, this._scene);
-        const groundmtl = new StandardMaterial("groundmtl", this._scene);
-        groundmtl.diffuseTexture = new Texture("./assets/textures/Floor.png", this._scene, true, false);
-        groundmtl.roughness = 1.0;
-        ground.material = groundmtl;
-
-
+        
+        this._assets = await this.loadAssets();
+        this._materials = await this._loadMaterials();
+        const scaleMultiplier = 5;
+        
+        
+        const ground = MeshBuilder.CreateGround("ground", {width: 24, height: 24}, this._scene);        
+        ground.material = this._materials.groundMat;
         ground.physicsImpostor = new PhysicsImpostor(
             ground,
             PhysicsImpostor.BoxImpostor,
             {mass: 0, restitution: 0.5}
         );
-
-
-        this._assets = await this.loadAssets();
-        this._materials = await this._loadMaterials();
-        const scaleMultiplier = 5;
-
+        
         //this._assets.table.checkCollisions = true;
         this._assets.table.addRotation(0, 0, Math.PI / 2);
         this._assets.table.scaling.scaleInPlace(scaleMultiplier);
         this._assets.table.position.y = -1.05;
         this._assets.table.material = this._materials.tableMat;
-
-        /*
-        assets.allMeshes.forEach((m) => {
-            m.receiveShadows = true;
-            m.checkCollisions = true;
-            m.addRotation(0, 0, Math.PI/2); 
-            m.scaling.scaleInPlace(scaleMultiplier);
-        }
-        */
+        
 
         const cupsPositions: Vector3[] = [
             new Vector3(0, 0, 0),
@@ -185,6 +172,12 @@ export class Environment {
     
     private async _loadMaterials(){
         
+        // ground material
+        const groundMat = new StandardMaterial("Ground mat", this._scene);
+        groundMat.diffuseTexture = new Texture("/assets/textures/Floor.png", this._scene, true, false);
+        //groundMat.roughness = 1.0;
+        
+        
         // blue cup material
         const blueCupMat = new PBRMetallicRoughnessMaterial("Blue beer cup", this._scene);
         blueCupMat.baseTexture = new Texture("/assets/textures/BeerCupBlue.png", this._scene, true, false);
@@ -204,6 +197,7 @@ export class Environment {
         tableMat.metallic = 0;
         
         return{
+            groundMat : groundMat as StandardMaterial,
             blueCupMat : blueCupMat as PBRMetallicRoughnessMaterial,
             redCupMat : redCupMat as PBRMetallicRoughnessMaterial, 
             tableMat : tableMat as PBRMetallicRoughnessMaterial

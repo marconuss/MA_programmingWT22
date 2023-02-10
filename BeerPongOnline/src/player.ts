@@ -23,7 +23,7 @@ export class Player {
 
     constructor(scene: Scene) {
         this.scene = scene;
-        this._setupPlayerCamera();
+        //this._setupPlayerCamera();
         //this.player = new TransformNode("player", this.scene);
     }
 

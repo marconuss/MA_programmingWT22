@@ -1,27 +1,40 @@
-﻿import {Scene} from "@babylonjs/core";
+﻿import {Color4, Engine, FreeCamera, MeshBuilder, Scene, Vector3} from "@babylonjs/core";
 import {AdvancedDynamicTexture, Button} from "@babylonjs/gui";
-import {Client} from "colyseus.js";
+import {Client, Room} from "colyseus.js";
 import Game from "./game";
 
-const ROOM_NAME = "Pub";
-const ENDPOINT = "ws://localhost/2567";
+const ROOM_NAME = "pub";
+const ENDPOINT = "ws://localhost:2567";
 
 export default class Menu{
     private _scene: Scene;
+    private _engine: Engine;
     private _advancedTexture: AdvancedDynamicTexture;
     
-    private _colyseus: Client = new Client(ENDPOINT);
+    private _colyseus;
     
-    constructor(scene: Scene) {
+    private _room; Room;
+    
+    constructor(scene: Scene,engine: Engine) {
         this._scene = scene;
+        this._engine = engine;
+        
+        this._colyseus = new Client(ENDPOINT);
     }
     
-    public createMenu() : void{
+    public async createMenu(){
+        
+        //await this._connectToServer();
+                
         this._advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+        let camera = new FreeCamera("camera1", new Vector3(0, 0, 0), this._scene);
+        camera.setTarget(Vector3.Zero());
         
         const createGameBtn = Button.CreateSimpleButton("createGame", "START NEW GAME");
         createGameBtn.width = 0.2;
         createGameBtn.height = "40px";
+        createGameBtn.top = "-50px";
         createGameBtn.color = "white";
         this._advancedTexture.addControl(createGameBtn);
         
@@ -32,10 +45,9 @@ export default class Menu{
         const joinGameBtn = Button.CreateSimpleButton("joinGame", "JOIN GAME");
         joinGameBtn.width = 0.2;
         joinGameBtn.height = "40px";
-        joinGameBtn.top = "-50px";
         joinGameBtn.color = "white";
         this._advancedTexture.addControl(joinGameBtn);
-
+        
         joinGameBtn.onPointerUpObservable.add(() => {
             this._createGame("join");
         });
@@ -47,24 +59,43 @@ export default class Menu{
         try{
             switch (method) {
                 case "create":
-                    game = new Game(this._scene, await this._colyseus.create(ROOM_NAME));
+                    console.log("create room");
+                    game = new Game(this._scene, this._engine, await this._colyseus.create(ROOM_NAME));
                     break;
                 case "join":
-                    game = new Game(this._scene, await this._colyseus.join(ROOM_NAME));
+                    game = new Game(this._scene, this._engine, await this._colyseus.join(ROOM_NAME));
                     break;
                 default:
-                    game = new Game(this._scene, await this._colyseus.joinOrCreate(ROOM_NAME));
+                    game = new Game(this._scene, this._engine, await this._colyseus.joinOrCreate(ROOM_NAME));
             }
             this._scene.dispose(); 
-            await this._goToGame();
+            await this._goToGame(game);
         } catch (error) {
-            console.log("!!" + error);
+            console.error("!error! " + error.message);
         }
         
     }
     
-    private async _goToGame(){
-        
+    private async _goToGame(game: Game){
+        await game.initGame();
     }
+
+
+    /*
     
+    private async _connectToServer(){
+
+        this._colyseus
+            .joinOrCreate(ROOM_NAME)
+            .then(function (room){
+                console.log("Connected to roomId: " + room.id);
+
+            })
+            .catch(function (error){
+                let errorMessage: string = error.message;
+                console.error("Couldn't connect");
+            });
+
+    }
+    */
 }

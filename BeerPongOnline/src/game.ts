@@ -1,14 +1,28 @@
-﻿import {Color3, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3} from "@babylonjs/core";
+﻿import {
+    CannonJSPlugin,
+    Color3,
+    Engine,
+    Mesh,
+    MeshBuilder,
+    Scene,
+    StandardMaterial,
+    UniversalCamera,
+    Vector3
+} from "@babylonjs/core";
 import {Room} from "colyseus.js";
 import Menu from "./menu";
 import {Environment} from "./environment";
 import {AdvancedDynamicTexture, Button, Control, Slider} from "@babylonjs/gui";
 import {Player} from "./player";
+import CANNON from "cannon";
 
+const CAMERA_ROTATION = 0.35;
 
 export default class Game {
 
     private _scene: Scene;
+    private _engine: Engine;
+    private _physicsEngine: CannonJSPlugin;
 
     private _room: Room;
     private _playerEntities: { [playerId: string]: Mesh } = {};
@@ -16,14 +30,48 @@ export default class Game {
     private _playerDirection: { [playerId: string]: number } = {};
 
     private _player: Player;
-    constructor(scene: Scene, room: Room) {
+    private _camera: UniversalCamera;
+    
+    constructor(scene: Scene, engine: Engine, room: Room) {
+        this._engine = engine;
         this._scene = scene;
         this._room = room;
+
+        this._physicsEngine = new CannonJSPlugin(true, 10, CANNON);
+        
+        window.addEventListener("keydown", (ev) => {
+            // Shift+Ctrl+Alt+I
+            if (ev.key === "i") {
+                if (this._scene.debugLayer.isVisible()) {
+                    this._scene.debugLayer.hide();
+                } else {
+                    this._scene.debugLayer.show();
+                }
+            }
+        });
+    }
+    
+    public async initGame() {
+        
+        console.log("joined room: " + this._room.name);
+        
+        let scene = new Scene(this._engine);
+        this._scene = scene;
+        scene.gravity = new Vector3(0, -9.81, 0);
+        scene.enablePhysics(scene.gravity, this._physicsEngine);
+        
+        await this._setupCamera();
+        
+        await this.initEnvironment();
+        
+        //await this.initPlayers();
+        this.doRender();
     }
 
-    public initPlayers(): void {
+    public async initPlayers() {
         
         this._player = new Player(this._scene);
+        await this._player.loadPlayerAssets(this._scene);
         
         this._room.state.players.onAdd((player, sessionId) => {
 
@@ -53,7 +101,7 @@ export default class Game {
         });
         
         this._room.onLeave(() => {
-            this._goToMenu();
+            //this._goToMenu();
         });
     }
     
@@ -126,10 +174,46 @@ export default class Game {
             })
         });        
     }
+
+/*
     
     private _goToMenu() {
-        const menu = new Menu(this._scene);
+
+        this._engine.displayLoadingUI();
+        this._scene.detachControl();
+
+        this._scene.dispose();
+        
+        const menu = new Menu(this._engine);
         menu.createMenu();
+    }
+ */
+    
+    private _setupCamera() {
+
+        //our actual camera that's pointing at our root's position
+        this._camera = new UniversalCamera("cam", new Vector3(0, 8.5, 11), this._scene);
+        //this.camera.lockedTarget = this._camRoot.position;
+        this._camera.rotation = new Vector3(CAMERA_ROTATION, Math.PI, 0);
+        this._camera.attachControl();
+        this._camera.fov = 0.7
+
+        this._scene.activeCamera = this._camera;
+        return this._camera;
+    }
+
+
+    private doRender(): void {
+
+        // Run the render loop.
+        this._engine.runRenderLoop(() => {
+            this._scene.render();
+        });
+
+        // The canvas/window resize event handler.
+        window.addEventListener('resize', () => {
+            this._engine.resize();
+        });
     }
     
 }

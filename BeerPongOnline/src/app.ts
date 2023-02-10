@@ -52,22 +52,7 @@ class App {
 
         // initialize physics engine
         this._physicsEngine = new CannonJSPlugin(true, 10, CANNON);
-
-        // hide/show the Inspector
-        window.addEventListener("keydown", (ev) => {
-            // Shift+Ctrl+Alt+I
-            if (ev.key === "i") {
-                if (this._scene.debugLayer.isVisible()) {
-                    this._scene.debugLayer.hide();
-                } else {
-                    this._scene.debugLayer.show();
-                }
-            }
-        });
-
-        // connect to server
-        this._connectToServer();
-
+        
         // run the main render loop
         this._main();
     }
@@ -97,49 +82,6 @@ class App {
         return this._canvas;
     }
     
-    private async _connectToServer(){
-        
-        const colyseuSDK = new Client("ws://localhost:2567");
-
-        this._room = await colyseuSDK.joinOrCreate("my_room");
-        
-        let playerEntities = {};
-        
-        var playerForceVector = Vector3.Zero();
-        
-        this._room.state.players.onAdd((player, sessionId) =>{
-          var sphere = MeshBuilder.CreateSphere(`player-${sessionId}`, {
-              segments: 16, diameter: 0.3
-          });
-          
-          sphere.position = new Vector3(0, 7, -6.5);
-          
-          playerForceVector.x = player.direction;
-          playerForceVector.y = player.strength;
-          
-          playerEntities[sessionId] = sphere;
-          
-        })
-        
-        this._room.state.players.onAdd(function (player, sessionId){
-            player.onChange(function () {
-                playerEntities[sessionId].strength = player.strength;
-                playerEntities[sessionId].direction = player.direction;
-            })
-        })
-
-        colyseuSDK
-            .joinOrCreate("my_room")
-            .then(function (room){
-                console.log("Connected to roodId: " + room.id);
-
-            })
-            .catch(function (error){
-                console.log("Couldn't connect." + error.code);
-            })
-
-    }
-    
 
     private async _main(): Promise<void> {
         
@@ -148,22 +90,25 @@ class App {
         // Register a render loop to repeatedly render the scene
         this._engine.runRenderLoop(() => {
             this._scene.render();
-            // switch (this._state) {
-            //     case State.MENU:
-            //         this._scene.render();
-            //         break;
-            //     case State.GAME:
-            //         this._scene.render();
-            //         break;
-            //     case State.LOSE:
-            //         this._scene.render();
-            //         break;
-            //     case State.START:
-            //         this._scene.render();
-            //         break;
-            //     default:
-            //         break;
-            // }
+            /*
+             switch (this._state) {
+                 
+                 case State.MENU:
+                     this._scene.render();
+                     break;
+                 case State.GAME:
+                     this._scene.render();
+                     break;
+                 case State.LOSE:
+                     this._scene.render();
+                     break;
+                 case State.START:
+                     this._scene.render();
+                     break;
+                 default:
+                     break;
+             }
+            */
         });
 
         //resize if the screen is resized/rotated
@@ -188,11 +133,13 @@ class App {
         this._scene = scene;
         this._state = State.MENU;
         
-        const menu = new Menu(scene);
-        let camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
-        camera.setTarget(Vector3.Zero());
-        menu.createMenu();
+        const menu = new Menu(this._scene, this._engine);
+
+        await menu.createMenu();
     }
+    
+    //-------------------------------------------------------
+    /*
 
     private async _goToStart() {
         
@@ -237,15 +184,13 @@ class App {
         this._state = State.START;
     }
     
-    
-    
 
     private async _setUpGame() {
 
         let scene = new Scene(this._engine);
         this._gamescene = scene;
         
-        this._game = new Game(scene, this._room);
+        //this._game = new Game(scene, this._room);
 
         scene.enablePhysics(new Vector3(0, -9.81, 0), this._physicsEngine);
         console.log("enable physics");
@@ -266,13 +211,11 @@ class App {
         //this._environment._createImpostors();
     }
 
-    /*
     private async _initializeGameAsync(scene): Promise<void> {
         //temporary light to light the entire scene
 
 
     }
-     */
 
     private async _goToGame() {
         //--SETUP SCENE--
@@ -295,7 +238,6 @@ class App {
         loseBtn.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
         loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
         playerUI.addControl(loseBtn);
-        /*
         
         const shootBtn = Button.CreateSimpleButton("lose", "SHOOT");
         shootBtn.width = 0.2
@@ -344,7 +286,6 @@ class App {
             direction = directionSlider.value;
             strength = -strenghtSlider.value;
         }
-         */
 
         //this handles interactions with the start button attached to the scene
         loseBtn.onPointerDownObservable.add(() => {
@@ -353,7 +294,8 @@ class App {
             scene.detachControl(); //observables disabled
         });
 
-        /*
+        
+        
        
         shootBtn.onPointerDownObservable.add(() => {
 
@@ -364,7 +306,7 @@ class App {
                 strength: strength
             })
         });
-         */
+         
         
         //primitive character and setting
         //await this._initializeGameAsync(scene);
@@ -380,7 +322,7 @@ class App {
         //the game is ready, attach control back
         this._scene.attachControl();
     }
-
+    
     private async _goToLose(): Promise<void> {
         this._engine.displayLoadingUI();
 
@@ -411,6 +353,8 @@ class App {
         this._scene = scene;
         this._state = State.LOSE;
     }
+    
+     */
 
 }
 
