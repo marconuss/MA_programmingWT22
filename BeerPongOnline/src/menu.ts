@@ -17,23 +17,54 @@ export default class Menu{
     }
     
     public createMenu() : void{
-        
         this._advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
-        const mainBtn = Button.CreateSimpleButton("mainmenu", "START GAME");
-        mainBtn.width = 0.2;
-        mainBtn.height = "40px";
-        mainBtn.color = "white";
-        this._advancedTexture.addControl(mainBtn);
-        //this handles interactions with the start button attached to the scene
-        mainBtn.onPointerUpObservable.add(() => {
-            this._createGame();
+        
+        const createGameBtn = Button.CreateSimpleButton("createGame", "START NEW GAME");
+        createGameBtn.width = 0.2;
+        createGameBtn.height = "40px";
+        createGameBtn.color = "white";
+        this._advancedTexture.addControl(createGameBtn);
+        
+        createGameBtn.onPointerUpObservable.add(() => {
+            this._createGame("create");
         });
+        
+        const joinGameBtn = Button.CreateSimpleButton("joinGame", "JOIN GAME");
+        joinGameBtn.width = 0.2;
+        joinGameBtn.height = "40px";
+        joinGameBtn.top = "-50px";
+        joinGameBtn.color = "white";
+        this._advancedTexture.addControl(joinGameBtn);
+
+        joinGameBtn.onPointerUpObservable.add(() => {
+            this._createGame("join");
+        });
+                
+    }
+    
+    private async _createGame(method: string): Promise<void>{
+        let game: Game;
+        try{
+            switch (method) {
+                case "create":
+                    game = new Game(this._scene, await this._colyseus.create(ROOM_NAME));
+                    break;
+                case "join":
+                    game = new Game(this._scene, await this._colyseus.join(ROOM_NAME));
+                    break;
+                default:
+                    game = new Game(this._scene, await this._colyseus.joinOrCreate(ROOM_NAME));
+            }
+            this._scene.dispose(); 
+            await this._goToGame();
+        } catch (error) {
+            console.log("!!" + error);
+        }
         
     }
     
-    private async _createGame(): Promise<void>{
-        let game: Game;
+    private async _goToGame(){
+        
     }
     
 }

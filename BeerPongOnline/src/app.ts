@@ -21,8 +21,8 @@ import {Player} from "./player";
 import * as CANNON from "cannon";
 import {Client, Room} from "colyseus.js";
 import Game from "./game";
-
-enum State { START = 0, GAME = 1, LOSE = 2 }
+import Menu from "./menu";
+enum State { MENU = 0, GAME = 1, LOSE = 2, START = 3 }
 
 class App {
     //Game State Related
@@ -143,29 +143,55 @@ class App {
 
     private async _main(): Promise<void> {
         
-        await this._goToStart();
-
+        //await this._goToStart();
+        await this._goToMenu();
         // Register a render loop to repeatedly render the scene
         this._engine.runRenderLoop(() => {
-            switch (this._state) {
-                case State.START:
-                    this._scene.render();
-                    break;
-                case State.GAME:
-                    this._scene.render();
-                    break;
-                case State.LOSE:
-                    this._scene.render();
-                    break;
-                default:
-                    break;
-            }
+            this._scene.render();
+            // switch (this._state) {
+            //     case State.MENU:
+            //         this._scene.render();
+            //         break;
+            //     case State.GAME:
+            //         this._scene.render();
+            //         break;
+            //     case State.LOSE:
+            //         this._scene.render();
+            //         break;
+            //     case State.START:
+            //         this._scene.render();
+            //         break;
+            //     default:
+            //         break;
+            // }
         });
 
         //resize if the screen is resized/rotated
         window.addEventListener('resize', () => {
             this._engine.resize();
         });
+    }
+    
+    private async _goToMenu() {
+        
+        this._engine.displayLoadingUI();
+        this._scene.detachControl();
+        
+        console.log("load menu scene");
+        let scene = new Scene(this._engine);
+        scene.clearColor = new Color4(0, 0, 0, 1);
+        
+        await scene.whenReadyAsync();
+        this._engine.hideLoadingUI();
+        //lastly set the current state to the start state and set the scene to the start scene
+        this._scene.dispose();
+        this._scene = scene;
+        this._state = State.MENU;
+        
+        const menu = new Menu(scene);
+        let camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
+        camera.setTarget(Vector3.Zero());
+        menu.createMenu();
     }
 
     private async _goToStart() {
@@ -210,6 +236,9 @@ class App {
         this._scene = scene;
         this._state = State.START;
     }
+    
+    
+    
 
     private async _setUpGame() {
 
