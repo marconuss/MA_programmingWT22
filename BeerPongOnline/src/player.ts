@@ -1,23 +1,13 @@
-﻿import {
-    Color3,
-    Mesh,
-    MeshBuilder,
-    PhysicsImpostor,
-    Scene,
-    StandardMaterial,
-    UniversalCamera,
-    Vector3
-} from "@babylonjs/core";
+﻿import {Color3, Mesh, MeshBuilder, PhysicsImpostor, Scene, StandardMaterial, Vector3} from "@babylonjs/core";
 
 export class Player {
 
-    private _scene: Scene;
     public id: string;
     public team: number;
-
     //Player
     public playerMesh: Mesh;
     public playerCollider: Mesh;
+    private _scene: Scene;
 
     //public player: TransformNode;
 
@@ -46,9 +36,9 @@ export class Player {
         this.playerCollider.parent = null;
         this.playerCollider.position.set(0, 7, 6.5);
         //this.playerCollider.parent = this.player;
-                
+
         return this.playerCollider;
-        
+
     }
 
     public _shootBall(forceVector: Vector3) {

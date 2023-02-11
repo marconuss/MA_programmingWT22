@@ -1,17 +1,7 @@
-﻿import {
-    CannonJSPlugin,
-    Color3, Color4,
-    Engine,
-    Mesh,
-    MeshBuilder,
-    Scene,
-    StandardMaterial,
-    UniversalCamera,
-    Vector3
-} from "@babylonjs/core";
+﻿import {CannonJSPlugin, Color4, Engine, Scene, UniversalCamera, Vector3} from "@babylonjs/core";
 import Menu from "./menu";
 import {Environment} from "./environment";
-import {AdvancedDynamicTexture, Button, Control, Slider, SliderGroup} from "@babylonjs/gui";
+import {AdvancedDynamicTexture, Button, Control, Slider} from "@babylonjs/gui";
 import {Player} from "./player";
 import CANNON from "cannon";
 import {Client, Room} from "colyseus.js";
@@ -103,11 +93,99 @@ export default class Game {
         this.doRender();
     }
 
+    public async initEnvironment() {
+
+        const environment = new Environment(this._scene);
+        await environment.load();
+
+    }
+
+    public _displayGameControls() {
+
+        const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("GameUI");
+
+        const shootBtn = Button.CreateSimpleButton("shoot", "SHOOT");
+        shootBtn.width = 0.2
+        shootBtn.height = "40px";
+        shootBtn.color = "white";
+        shootBtn.top = "-14px";
+        shootBtn.background = "green";
+        shootBtn.thickness = 0;
+        shootBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+        playerUI.addControl(shootBtn);
+
+        const directionSlider = new Slider();
+        directionSlider.minimum = -0.5;
+        directionSlider.maximum = 0.5;
+        directionSlider.value = 0;
+        directionSlider.height = "20px";
+        directionSlider.width = "150px";
+        directionSlider.color = "#003399";
+        directionSlider.background = "grey";
+        directionSlider.left = "120px";
+        directionSlider.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+        directionSlider.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
+        playerUI.addControl(directionSlider);
+
+        const strenghtSlider = new Slider();
+        strenghtSlider.minimum = 1;
+        strenghtSlider.maximum = 5;
+        strenghtSlider.value = 1;
+        strenghtSlider.height = "20px";
+        strenghtSlider.width = "150px";
+        strenghtSlider.color = "#003399";
+        strenghtSlider.background = "grey";
+        strenghtSlider.left = "120px";
+        strenghtSlider.top = "50px";
+        strenghtSlider.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+        strenghtSlider.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
+        playerUI.addControl(strenghtSlider);
+
+        let playerTeam = this.localTeam;
+
+        // inital values
+
+        let direction = directionSlider.value;
+        let strength = (playerTeam === Team.BLUE) ? strenghtSlider.value : -strenghtSlider.value;
+
+        directionSlider.onValueChangedObservable.add(updateForce);
+        strenghtSlider.onValueChangedObservable.add(updateForce);
+
+        function updateForce() {
+            direction = directionSlider.value;
+            strength = (playerTeam === Team.BLUE) ? strenghtSlider.value : -strenghtSlider.value;
+        }
+
+        shootBtn.onPointerDownObservable.add(() => {
+
+            this.currentTurn = this.currentTurn === 0 ? 1 : 0;
+
+            this._localPlayer._shootBall(new Vector3(direction, 1, strength));
+
+            this._room.send("message", {
+                direction: direction,
+                strength: strength,
+                currentTurn: this.currentTurn
+            })
+        });
+    }
+
+    public sendForceVector(force: Vector3) {
+        this._room.send('strength', force.z);
+        this._room.send('direction', force.x);
+    }
+
+    public endTurn(currentTurn: number) {
+        // player 1 plays at turn 0
+        // player 2 plays at turn 1
+
+        this._room.send('currentTurn', currentTurn === 0 ? 1 : 0);
+    }
+
     private async initBall() {
         this._localPlayer = new Player(this._scene);
         await this._localPlayer.loadPlayerAssets();
     }
-
 
     private async _onAddPlayers() {
 
@@ -170,83 +248,6 @@ export default class Game {
 
     }
 
-    public async initEnvironment() {
-
-        const environment = new Environment(this._scene);
-        await environment.load();
-
-    }
-
-    public _displayGameControls() {
-
-        const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("GameUI");
-
-        const shootBtn = Button.CreateSimpleButton("shoot", "SHOOT");
-        shootBtn.width = 0.2
-        shootBtn.height = "40px";
-        shootBtn.color = "white";
-        shootBtn.top = "-14px";
-        shootBtn.background = "green";
-        shootBtn.thickness = 0;
-        shootBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-        playerUI.addControl(shootBtn);
-
-        const directionSlider = new Slider();
-        directionSlider.minimum = -0.5;
-        directionSlider.maximum = 0.5;
-        directionSlider.value = 0;
-        directionSlider.height = "20px";
-        directionSlider.width = "150px";
-        directionSlider.color = "#003399";
-        directionSlider.background = "grey";
-        directionSlider.left = "120px";
-        directionSlider.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
-        directionSlider.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
-        playerUI.addControl(directionSlider);
-
-        const strenghtSlider = new Slider();
-        strenghtSlider.minimum = 1;
-        strenghtSlider.maximum = 5;
-        strenghtSlider.value = 1;
-        strenghtSlider.height = "20px";
-        strenghtSlider.width = "150px";
-        strenghtSlider.color = "#003399";
-        strenghtSlider.background = "grey";
-        strenghtSlider.left = "120px";
-        strenghtSlider.top = "50px";
-        strenghtSlider.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
-        strenghtSlider.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
-        playerUI.addControl(strenghtSlider);
-        
-        let playerTeam = this.localTeam;
-        
-        // inital values
-        
-        let direction = directionSlider.value;
-        let strength = (playerTeam === Team.BLUE) ? strenghtSlider.value : -strenghtSlider.value;
-        
-        directionSlider.onValueChangedObservable.add(updateForce);
-        strenghtSlider.onValueChangedObservable.add(updateForce);
-
-        function updateForce() {
-            direction = directionSlider.value;
-            strength = (playerTeam === Team.BLUE) ? strenghtSlider.value : -strenghtSlider.value;
-        }
-
-        shootBtn.onPointerDownObservable.add(() => {
-
-            this.currentTurn = this.currentTurn === 0 ? 1 : 0;
-
-            this._localPlayer._shootBall(new Vector3(direction, 1, strength));
-
-            this._room.send("message", {
-                direction: direction, 
-                strength: strength, 
-                currentTurn: this.currentTurn
-            })
-        });
-    }
-
     private async _goToMenu() {
 
         this._engine.displayLoadingUI();
@@ -285,7 +286,6 @@ export default class Game {
         return this._camera;
     }
 
-
     private doRender(): void {
 
         // Run the render loop.
@@ -297,18 +297,6 @@ export default class Game {
         window.addEventListener('resize', () => {
             this._engine.resize();
         });
-    }
-
-    public sendForceVector(force: Vector3) {
-        this._room.send('strength', force.z);
-        this._room.send('direction', force.x);
-    }
-
-    public endTurn(currentTurn: number) {
-        // player 1 plays at turn 0
-        // player 2 plays at turn 1
-
-        this._room.send('currentTurn',currentTurn === 0 ? 1 : 0);
     }
 
 
