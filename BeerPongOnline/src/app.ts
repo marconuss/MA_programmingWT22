@@ -1,8 +1,8 @@
 ﻿import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import {CannonJSPlugin, Color4, Engine, Scene,} from "@babylonjs/core";
-import * as CANNON from "cannon";
+import {Color4, Engine, Scene,} from "@babylonjs/core";
+
 import Menu from "./menu";
 
 class App {
@@ -20,9 +20,7 @@ class App {
         // initialize babylon scene and engine
         this._engine = new Engine(this._canvas, true);
         this._scene = new Scene(this._engine);
-
-        // initialize physics engine
-        this._physicsEngine = new CannonJSPlugin(true, 10, CANNON);
+        
 
         // run the main render loop
         this._main();

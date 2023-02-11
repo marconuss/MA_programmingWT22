@@ -3,21 +3,16 @@ import {AdvancedDynamicTexture, Button} from "@babylonjs/gui";
 import {Client} from "colyseus.js";
 import Game from "./game";
 
-const ROOM_NAME = "pub";
-const ENDPOINT = "ws://localhost:2567";
-
 export default class Menu {
     private _scene: Scene;
     private _engine: Engine;
     private _advancedTexture: AdvancedDynamicTexture;
-
-    private _colyseus;
+    
 
     constructor(scene: Scene, engine: Engine) {
         this._scene = scene;
         this._engine = engine;
-
-        this._colyseus = new Client(ENDPOINT);
+        
     }
 
     public async createMenu() {
