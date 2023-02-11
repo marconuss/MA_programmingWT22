@@ -71,64 +71,52 @@ export default class Game {
         this.doRender();
     }
 
-    //public async initPlayers() {
+    public async initPlayers() {
         
-        //this._player = new Player(this._scene);
+        this._player = new Player(this._scene);
         //await this._player.loadPlayerAssets(this._scene);
         
-        /*
-        this._room.state.players.onAdd((player, sessionId) => {
+        this._room.state.players.onAdd = (player, sessionId) => {
+                        
+            const playerCollider = MeshBuilder.CreateSphere("playerCollider", {diameter: 0.3, segments: 16}, this._scene);
+            playerCollider.isVisible = false;
+            playerCollider.isPickable = false;
+            playerCollider.checkCollisions = true;
 
-            const isCurrentPlayer = (sessionId === this._room.sessionId);
+            const playerMesh = MeshBuilder.CreateSphere("ball", {diameter: 0.3, segments: 16}, this._scene);
+            const ballMtl = new StandardMaterial("white", this._scene);
+            ballMtl.diffuseColor = new Color3(.9, .9, .9);
+            playerMesh.material = ballMtl;
+            playerMesh.isPickable = false;
 
-            const sphere = MeshBuilder.CreateSphere(`player-${sessionId}`, {
-                segments: 16,
-                diameter: 0.3
-            }, this._scene);
+            playerMesh.parent = playerCollider;
+            playerCollider.parent = null;
 
-            const sphereMat = new StandardMaterial(`playerMat-${sessionId}`, this._scene);
-            sphereMat.diffuseColor = new Color3(.9, .9, .9);
-            sphere.material = sphereMat;
+            //playerCollider.position = isCurrentPlayer ? playerCollider.position.set(0, 7, 6.5) : playerCollider.position.set(0, 7, -6.5);
 
-            sphere.position = isCurrentPlayer ? sphere.position.set(0, 7, 6.5) : sphere.position.set(0, 7, -6.5);
+            if (this._room.state.players.length === 0) {
+                // First player to join
+                playerCollider.position = playerCollider.position.set(0, 7, -6.5);
+                this._camera.position = new Vector3(0, 8.5, -11);
+                
+            } else {
+                // Second player to join
+                playerCollider.position = playerCollider.position.set(0, 7, 6.5);
+                this._camera.position = new Vector3(0, 8.5, 11);
+                this._camera.rotation.addInPlace(new Vector3(0, -3.1, 0));
+            }
             
-            this._player.playerMesh = sphere;
-
-            this._playerEntities[sessionId] = sphere;
             this._playerStrength[sessionId] = player.strength;
-            this._playerStrength[sessionId] = player.strength;
+            this._playerDirection[sessionId] = player.direction;
             
             player.onChange(() => {
                 this._playerStrength[sessionId] = player.strength;
-                this._playerStrength[sessionId] = player.strength;
+                this._playerDirection[sessionId] = player.direction;
             });
-        });
+        };
         
-         */
-        
-        //this._room.onLeave(() => {
+        this._room.onLeave(() => {
             //this._goToMenu();
-        //});
-    //}
-    initPlayers(): void {
-        this._room.state.players.onAdd((player, sessionId) => {
-            const isCurrentPlayer = (sessionId === this._room.sessionId);
-
-            const sphere = MeshBuilder.CreateSphere(`player-${sessionId}`, {
-                segments: 8,
-                diameter: 40
-            }, this._scene);
-
-            // Set player mesh properties
-            const sphereMaterial = new StandardMaterial(`playerMat-${sessionId}`, this._scene);
-            sphereMaterial.emissiveColor = (isCurrentPlayer) ? Color3.FromHexString("#ff9900") : Color3.Gray();
-            sphere.material = sphereMaterial;
-
-            // Set player spawning position
-            sphere.position.set(player.x, player.y, player.z);
-
-            this._playerEntities[sessionId] = sphere;
-            
         });
     }
     

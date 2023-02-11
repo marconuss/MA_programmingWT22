@@ -41,15 +41,16 @@ export class Player {
         this.playerMesh.isPickable = false;
 
         this.playerMesh.parent = this.playerCollider;
+        this.playerCollider.parent = null;
         //this.playerCollider.parent = this.player;
-
-        this.playerCollider.position = new Vector3(0, 7, 6.5);
+                
+        return this.playerCollider;
+        
     }
 
     public _shootBall(forceVector: Vector3) {
 
         //Apply an impulse to the ball in the given direction
-        this.playerCollider.parent = null;
         this.playerCollider.physicsImpostor = new PhysicsImpostor(
             this.playerCollider,
             PhysicsImpostor.SphereImpostor,

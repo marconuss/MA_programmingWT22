@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@colyseus/loadtest": "^0.14.8",
     "colyseus.js": "^0.14.13",
     "vite": "^4.1.1"
   },
