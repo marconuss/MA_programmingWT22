@@ -12,9 +12,6 @@ export default class Menu{
     private _advancedTexture: AdvancedDynamicTexture;
     
     private _colyseus;
-    
-    private _room; Room;
-    
     constructor(scene: Scene,engine: Engine) {
         this._scene = scene;
         this._engine = engine;
@@ -56,11 +53,14 @@ export default class Menu{
     
     private async _createGame(method: string): Promise<void>{
         let game: Game;
+        game = new Game(this._scene, this._engine);
+        this._scene.dispose();
+        await game.init(method);
+        /*
         try{
             switch (method) {
                 case "create":
-                    console.log("create room");
-                    game = new Game(this._scene, this._engine, await this._colyseus.create(ROOM_NAME));
+                    game = new Game(this._scene, this._engine, await this._colyseus.joinOrCreate(ROOM_NAME));
                     break;
                 case "join":
                     game = new Game(this._scene, this._engine, await this._colyseus.join(ROOM_NAME));
@@ -74,11 +74,13 @@ export default class Menu{
             console.error("!error! " + error.message);
         }
         
+         */
+        
     }
     
-    private async _goToGame(game: Game){
-        await game.initGame();
-    }
+    //private async _goToGame(game: Game){
+        //await game.initGame();
+    //}
 
 
     /*

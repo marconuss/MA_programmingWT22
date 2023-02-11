@@ -43,6 +43,7 @@ export class Player {
         this.playerMesh.parent = this.playerCollider;
         this.playerCollider.parent = null;
         //this.playerCollider.parent = this.player;
+        this.playerCollider.position.set(0, 7, 6.5);
                 
         return this.playerCollider;
         

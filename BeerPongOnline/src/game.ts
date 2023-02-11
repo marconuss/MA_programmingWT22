@@ -9,20 +9,27 @@
     UniversalCamera,
     Vector3
 } from "@babylonjs/core";
-import {Room} from "colyseus.js";
 import Menu from "./menu";
 import {Environment} from "./environment";
 import {AdvancedDynamicTexture, Button, Control, Slider} from "@babylonjs/gui";
 import {Player} from "./player";
 import CANNON from "cannon";
+import {Client, Room} from "colyseus.js";
 
 const CAMERA_ROTATION = 0.35;
+const ROOM_NAME = "pub";
+const ENDPOINT = "ws://localhost:2567";
+
+enum Team { RED = 0, BLUE = 1}
 
 export default class Game {
+
+    public localTeam: Team;
 
     private _scene: Scene;
     private _engine: Engine;
     private _physicsEngine: CannonJSPlugin;
+
 
     private _room: Room;
     private _playerEntities: { [playerId: string]: Mesh } = {};
@@ -31,14 +38,19 @@ export default class Game {
 
     private _player: Player;
     private _camera: UniversalCamera;
-    
-    constructor(scene: Scene, engine: Engine, room: Room) {
+
+    private _colyseus;
+
+    //constructor(scene: Scene, engine: Engine, room: Room) {
+    constructor(scene: Scene, engine: Engine) {
         this._engine = engine;
         this._scene = scene;
-        this._room = room;
+        //this._room = room;
+
+        this._colyseus = new Client(ENDPOINT);
 
         this._physicsEngine = new CannonJSPlugin(true, 10, CANNON);
-        
+
         window.addEventListener("keydown", (ev) => {
             // Shift+Ctrl+Alt+I
             if (ev.key === "i") {
@@ -50,85 +62,94 @@ export default class Game {
             }
         });
     }
-    
+
+    public async init(method: string) {
+        try {
+            switch (method) {
+                case "create":
+                    this._room = await this._colyseus.joinOrCreate(ROOM_NAME);
+                    this.localTeam = Team.RED;
+                    await this._onAddPlayers();
+                    break;
+                case "join":
+                    this._room = await this._colyseus.join(ROOM_NAME);
+                    this.localTeam = Team.BLUE;
+                    await this._onAddPlayers();
+                    break;
+                default:
+                    console.log("default in game init");
+                    break;
+            }
+            await this.initGame();
+        } catch (error) {
+            console.error("!error! " + error.message);
+        }
+    }
+
     public async initGame() {
-        
-        console.log("joined room: " + this._room.name);
-        
+
         let scene = new Scene(this._engine);
         this._scene = scene;
         scene.gravity = new Vector3(0, -9.81, 0);
         scene.enablePhysics(scene.gravity, this._physicsEngine);
-        
+
         await this._setupCamera();
-        
+
         await this.initEnvironment();
-        
-        await this.initPlayers();
-        
+
         this._displayGameControls();
-        
+
         this.doRender();
     }
 
     public async initPlayers() {
+
+        console.log("initPLAYER");
+        /*
         
-        this._player = new Player(this._scene);
-        //await this._player.loadPlayerAssets(this._scene);
-        
-        this._room.state.players.onAdd = (player, sessionId) => {
-                        
-            const playerCollider = MeshBuilder.CreateSphere("playerCollider", {diameter: 0.3, segments: 16}, this._scene);
-            playerCollider.isVisible = false;
-            playerCollider.isPickable = false;
-            playerCollider.checkCollisions = true;
-
-            const playerMesh = MeshBuilder.CreateSphere("ball", {diameter: 0.3, segments: 16}, this._scene);
-            const ballMtl = new StandardMaterial("white", this._scene);
-            ballMtl.diffuseColor = new Color3(.9, .9, .9);
-            playerMesh.material = ballMtl;
-            playerMesh.isPickable = false;
-
-            playerMesh.parent = playerCollider;
-            playerCollider.parent = null;
-
-            //playerCollider.position = isCurrentPlayer ? playerCollider.position.set(0, 7, 6.5) : playerCollider.position.set(0, 7, -6.5);
-
-            if (this._room.state.players.length === 0) {
-                // First player to join
-                playerCollider.position = playerCollider.position.set(0, 7, -6.5);
-                this._camera.position = new Vector3(0, 8.5, -11);
-                
-            } else {
-                // Second player to join
-                playerCollider.position = playerCollider.position.set(0, 7, 6.5);
-                this._camera.position = new Vector3(0, 8.5, 11);
-                this._camera.rotation.addInPlace(new Vector3(0, -3.1, 0));
-            }
-            
-            this._playerStrength[sessionId] = player.strength;
-            this._playerDirection[sessionId] = player.direction;
-            
-            player.onChange(() => {
-                this._playerStrength[sessionId] = player.strength;
-                this._playerDirection[sessionId] = player.direction;
-            });
-        };
-        
-        this._room.onLeave(() => {
-            //this._goToMenu();
+        const playerId = this._room.sessionId;
+        console.log("local player id: ", playerId);
+        this._colyseus.then(function (room){
+            console.log("created room:", room.name);
+            return room;
         });
+                
+        this._player = new Player(this._scene);
+        await this._player.loadPlayerAssets(this._scene);
+        
+        this._room.state.players.onAdd = (player, key) =>{
+            console.log("added player: ", player);
+            console.log("with key: ", key)
+        };
+            
+         */
+
     }
-    
+
+    private async _onAddPlayers() {
+        this._room.state.players.onAdd = (player, key) => {
+            const isCurrentPlayer = (key === this._room.sessionId);
+
+            if (isCurrentPlayer) {
+                console.log("room: ", this._room.id);
+                console.log("this player: ", key);
+                console.log("current turn: ", player.currentTurn);
+                if (this.localTeam == player.currentTurn) {
+                    console.log("turn: ", this.localTeam);
+                }
+            }
+        };
+    }
+
     public async initEnvironment() {
 
         const environment = new Environment(this._scene);
         await environment.load();
-        
+
     }
-    
+
     public _displayGameControls() {
-        
+
         const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("GameUI");
 
         const shootBtn = Button.CreateSimpleButton("shoot", "SHOOT");
@@ -178,7 +199,7 @@ export default class Game {
             direction = directionSlider.value;
             strength = -strenghtSlider.value;
         }
-        
+
         shootBtn.onPointerDownObservable.add(() => {
 
             this._player._shootBall(new Vector3(direction, 1, strength));
@@ -187,29 +208,36 @@ export default class Game {
                 direction: direction,
                 strength: strength
             })
-        });        
+        });
     }
 
-/*
-    
-    private _goToMenu() {
-
-        this._engine.displayLoadingUI();
-        this._scene.detachControl();
-
-        this._scene.dispose();
+    /*
         
-        const menu = new Menu(this._engine);
-        menu.createMenu();
-    }
- */
+        private _goToMenu() {
     
+            this._engine.displayLoadingUI();
+            this._scene.detachControl();
+    
+            this._scene.dispose();
+            
+            const menu = new Menu(this._engine);
+            menu.createMenu();
+        }
+     */
+
     private _setupCamera() {
 
         //our actual camera that's pointing at our root's position
-        this._camera = new UniversalCamera("cam", new Vector3(0, 8.5, 11), this._scene);
+        let cameraPos = new Vector3(0, 8.5, 11);
+        let cameraRot = new Vector3(CAMERA_ROTATION, Math.PI, 0);
+        if(this.localTeam === Team.BLUE){
+            cameraPos = new Vector3(0, 8.5, -11);
+            cameraRot = new Vector3(CAMERA_ROTATION, 0, 0);
+        }
+
+        this._camera = new UniversalCamera("cam", cameraPos, this._scene);
         //this.camera.lockedTarget = this._camRoot.position;
-        this._camera.rotation = new Vector3(CAMERA_ROTATION, Math.PI, 0);
+        this._camera.rotation = cameraRot;
         this._camera.attachControl();
         this._camera.fov = 0.7
 
@@ -230,5 +258,18 @@ export default class Game {
             this._engine.resize();
         });
     }
-    
+
+    public sendForceVector(force: Vector3) {
+        this._room.send('strength', force.z);
+        this._room.send('direction', force.x);
+    }
+
+    public endTurn(currentTurn: number) {
+        // player 1 plays at turn 0
+        // player 2 plays at turn 1
+
+        this._room.send(currentTurn === 0 ? 1 : 0);
+    }
+
+
 }
