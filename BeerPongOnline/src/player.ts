@@ -11,9 +11,9 @@
 
 export class Player {
 
-    //constant values
-    public camera;
-    public scene: Scene;
+    private _scene: Scene;
+    public id: string;
+    public team: number;
 
     //Player
     public playerMesh: Mesh;
@@ -21,29 +21,31 @@ export class Player {
 
     //public player: TransformNode;
 
-    constructor(scene: Scene) {
-        this.scene = scene;
+    constructor(/*id: string, team: number, */scene: Scene) {
+        this._scene = scene;
+        //this.id = id;
+        //this.team = team;
         //this._setupPlayerCamera();
         //this.player = new TransformNode("player", this.scene);
     }
 
-    public async loadPlayerAssets(scene) {
+    public async loadPlayerAssets() {
 
-        this.playerCollider = MeshBuilder.CreateSphere("playerCollider", {diameter: 0.3, segments: 16}, scene);
+        this.playerCollider = MeshBuilder.CreateSphere("playerCollider", {diameter: 0.3, segments: 16}, this._scene);
         this.playerCollider.isVisible = false;
         this.playerCollider.isPickable = false;
         this.playerCollider.checkCollisions = true;
 
-        this.playerMesh = MeshBuilder.CreateSphere("ball", {diameter: 0.3, segments: 16}, scene);
-        const ballMtl = new StandardMaterial("white", scene);
+        this.playerMesh = MeshBuilder.CreateSphere("ball", {diameter: 0.3, segments: 16}, this._scene);
+        const ballMtl = new StandardMaterial("white", this._scene);
         ballMtl.diffuseColor = new Color3(.9, .9, .9);
         this.playerMesh.material = ballMtl;
         this.playerMesh.isPickable = false;
 
         this.playerMesh.parent = this.playerCollider;
         this.playerCollider.parent = null;
-        //this.playerCollider.parent = this.player;
         this.playerCollider.position.set(0, 7, 6.5);
+        //this.playerCollider.parent = this.player;
                 
         return this.playerCollider;
         
@@ -62,6 +64,7 @@ export class Player {
 
     }
 
+    /*
     private _setupPlayerCamera() {
 
         //our actual camera that's pointing at our root's position
@@ -74,5 +77,6 @@ export class Player {
         this.scene.activeCamera = this.camera;
         return this.camera;
     }
+     */
 
 }

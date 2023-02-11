@@ -20,7 +20,7 @@ const SHOWCOLLIDER = false;
 
 export class Environment {
     private _scene: Scene;
-
+    
     private _assets;
     private _materials;
 
@@ -51,7 +51,7 @@ export class Environment {
         ground.material = this._materials.groundMat;
         ground.physicsImpostor = new PhysicsImpostor(
             ground,
-            PhysicsImpostor.BoxImpostor,
+            PhysicsImpostor.PlaneImpostor,
             {mass: 0, restitution: 0.5}
         );
         

@@ -1,6 +1,6 @@
 ﻿import {
     CannonJSPlugin,
-    Color3,
+    Color3, Color4,
     Engine,
     Mesh,
     MeshBuilder,
@@ -11,7 +11,7 @@
 } from "@babylonjs/core";
 import Menu from "./menu";
 import {Environment} from "./environment";
-import {AdvancedDynamicTexture, Button, Control, Slider} from "@babylonjs/gui";
+import {AdvancedDynamicTexture, Button, Control, Slider, SliderGroup} from "@babylonjs/gui";
 import {Player} from "./player";
 import CANNON from "cannon";
 import {Client, Room} from "colyseus.js";
@@ -25,6 +25,7 @@ enum Team { RED = 0, BLUE = 1}
 export default class Game {
 
     public localTeam: Team;
+    public currentTurn: number;
 
     private _scene: Scene;
     private _engine: Engine;
@@ -32,11 +33,9 @@ export default class Game {
 
 
     private _room: Room;
-    private _playerEntities: { [playerId: string]: Mesh } = {};
-    private _playerStrength: { [playerId: string]: number } = {};
-    private _playerDirection: { [playerId: string]: number } = {};
 
-    private _player: Player;
+    private _localPlayer: Player;
+    private _opponent: Player;
     private _camera: UniversalCamera;
 
     private _colyseus;
@@ -97,48 +96,78 @@ export default class Game {
 
         await this.initEnvironment();
 
+        await this.initBall();
+
         this._displayGameControls();
 
         this.doRender();
     }
 
-    public async initPlayers() {
-
-        console.log("initPLAYER");
-        /*
-        
-        const playerId = this._room.sessionId;
-        console.log("local player id: ", playerId);
-        this._colyseus.then(function (room){
-            console.log("created room:", room.name);
-            return room;
-        });
-                
-        this._player = new Player(this._scene);
-        await this._player.loadPlayerAssets(this._scene);
-        
-        this._room.state.players.onAdd = (player, key) =>{
-            console.log("added player: ", player);
-            console.log("with key: ", key)
-        };
-            
-         */
-
+    private async initBall() {
+        this._localPlayer = new Player(this._scene);
+        await this._localPlayer.loadPlayerAssets();
     }
 
+
     private async _onAddPlayers() {
+
         this._room.state.players.onAdd = (player, key) => {
             const isCurrentPlayer = (key === this._room.sessionId);
+
+            player.distance = 0;
+            player.strength = 1;
+            player.currentTurn = 0;
+
+            if (isCurrentPlayer) {
+                switch (this.localTeam) {
+                    case Team.BLUE:
+                        console.log("current player of team Blue: ", this.localTeam);
+                        break;
+                    case Team.RED:
+                        console.log("current player of team RED: ", this.localTeam);
+                        break;
+                    default:
+                        console.log("other player of team", this.localTeam);
+                        break;
+                }
+            }
 
             if (isCurrentPlayer) {
                 console.log("room: ", this._room.id);
                 console.log("this player: ", key);
                 console.log("current turn: ", player.currentTurn);
-                if (this.localTeam == player.currentTurn) {
-                    console.log("turn: ", this.localTeam);
-                }
+
             }
+
+            player.listen("currentTurn", (currentValue, previousValue) => {
+                if (previousValue != 0 && previousValue != 1) {
+                    console.log("fist start of the game");
+                } else {
+                    console.log(`currentTurn is now ${currentValue}`);
+                    console.log(`previous value was: ${previousValue}`);
+                }
+            });
+
+            /*
+            player.onChange = function(changes) {
+                changes.forEach(change => {
+                    if(change.field === "currentTurn") {
+                        console.log(`currentTurn is now ${change.value}`);
+                    }
+                })
+            }
+             */
         };
+
+
+        this._room.state.players.onRemove = () => {
+            this._goToMenu();
+        };
+
+        this._room.onLeave(() => {
+            this._goToMenu();
+        })
+
     }
 
     public async initEnvironment() {
@@ -188,49 +217,60 @@ export default class Game {
         strenghtSlider.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
         strenghtSlider.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
         playerUI.addControl(strenghtSlider);
-
+        
+        let playerTeam = this.localTeam;
+        
+        // inital values
+        
         let direction = directionSlider.value;
-        let strength = -strenghtSlider.value;
+        let strength = (playerTeam === Team.BLUE) ? strenghtSlider.value : -strenghtSlider.value;
+        
         directionSlider.onValueChangedObservable.add(updateForce);
-
         strenghtSlider.onValueChangedObservable.add(updateForce);
 
         function updateForce() {
             direction = directionSlider.value;
-            strength = -strenghtSlider.value;
+            strength = (playerTeam === Team.BLUE) ? strenghtSlider.value : -strenghtSlider.value;
         }
 
         shootBtn.onPointerDownObservable.add(() => {
 
-            this._player._shootBall(new Vector3(direction, 1, strength));
+            this.currentTurn = this.currentTurn === 0 ? 1 : 0;
+
+            this._localPlayer._shootBall(new Vector3(direction, 1, strength));
 
             this._room.send("message", {
-                direction: direction,
-                strength: strength
+                direction: direction, 
+                strength: strength, 
+                currentTurn: this.currentTurn
             })
         });
     }
 
-    /*
-        
-        private _goToMenu() {
-    
-            this._engine.displayLoadingUI();
-            this._scene.detachControl();
-    
-            this._scene.dispose();
-            
-            const menu = new Menu(this._engine);
-            menu.createMenu();
-        }
-     */
+    private async _goToMenu() {
+
+        this._engine.displayLoadingUI();
+        this._scene.detachControl();
+
+        let scene = new Scene(this._engine);
+        scene.clearColor = new Color4(0, 0, 0, 1);
+
+        await scene.whenReadyAsync();
+        this._engine.hideLoadingUI();
+        //lastly set the current state to the start state and set the scene to the start scene
+        this._scene.dispose();
+        this._scene = scene;
+
+        const menu = new Menu(this._scene, this._engine);
+        await menu.createMenu();
+    }
 
     private _setupCamera() {
 
         //our actual camera that's pointing at our root's position
         let cameraPos = new Vector3(0, 8.5, 11);
         let cameraRot = new Vector3(CAMERA_ROTATION, Math.PI, 0);
-        if(this.localTeam === Team.BLUE){
+        if (this.localTeam === Team.BLUE) {
             cameraPos = new Vector3(0, 8.5, -11);
             cameraRot = new Vector3(CAMERA_ROTATION, 0, 0);
         }
@@ -268,7 +308,7 @@ export default class Game {
         // player 1 plays at turn 0
         // player 2 plays at turn 1
 
-        this._room.send(currentTurn === 0 ? 1 : 0);
+        this._room.send('currentTurn',currentTurn === 0 ? 1 : 0);
     }
 
 
