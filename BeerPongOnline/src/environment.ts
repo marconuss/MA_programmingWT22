@@ -12,7 +12,6 @@
     Texture,
     Vector3
 } from "@babylonjs/core";
-import {BeerCup} from "./beerCup";
 
 
 const SHOWCOLLIDER = false;
@@ -23,16 +22,9 @@ export class Environment {
     private _assets;
     private _materials;
 
-    //Meshes
-    private _opBeerCupObjs: Array<BeerCup>;
-    private _plBeerCupObjs: Array<BeerCup>;
-
     constructor(scene: Scene) {
         this._scene = scene;
-
-        this._opBeerCupObjs = [];
-        this._plBeerCupObjs = [];
-
+        
         // environmental textures for reflections on PBR materials
         this._scene.environmentTexture = new CubeTexture("./assets/textures/Sky.env", scene);
     }
