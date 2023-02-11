@@ -79,14 +79,6 @@ export class Environment {
             this._scene
         );
         tableCollider.position = new Vector3(0, tableCollider.position.y - 2.06, 0);
-        /*
-        tableCollider.physicsImpostor = new PhysicsImpostor(
-            tableCollider, 
-            PhysicsImpostor.BoxImpostor,
-            { mass: 0, friction: 0.5, restitution: 0.9 }, 
-            this._scene
-        );
-         */
 
         // beer cups
         const positionMultiplier = new Vector3(1.6, 1, 2.8);
@@ -108,83 +100,7 @@ export class Environment {
             new Vector3(positionMultiplier.x, positionMultiplier.y, -positionMultiplier.z),
             new Vector3(positionOffset.x, positionOffset.y, -positionOffset.z)
         );
-
-
-        /*
-
-        // opponent beer cups
-        this._assets.beerCup.isVisible = false;
-
-        const opBeerCupsHolder = new TransformNode("opBeerCupsHolder", this._scene);
-        //const opBeerCupsHolder = MeshBuilder.CreateBox("opBeerCupHolder", {size: 0},this._scene);
-        for (let i = 0; i < 10; i++) {
-            let beerCupInstance = this._assets.beerCup.clone("opBeerCup " + i);
-            beerCupInstance.isVisible = true;
-            
-            const beerCupCollider = MeshBuilder.CreateCylinder(beerCupInstance.name + "collider", { height: 0.6, diameterTop: 0.5, diameterBottom:0.3 }, this._scene);
-            beerCupCollider.isVisible = true;
-            beerCupCollider.bakeTransformIntoVertices(Matrix.Translation(0, 0.3, 0));
-            
-            beerCupInstance.setParent(beerCupCollider);
-            beerCupCollider.setParent(opBeerCupsHolder);
-
-            beerCupCollider.physicsImpostor = new PhysicsImpostor(
-                beerCupCollider,
-                PhysicsImpostor.CylinderImpostor,
-                {mass: 0, restitution: 0}
-            );
-            
-            //Create the new beerCup object
-            
-            let newOpBeerCup = new BeerCup(
-                this._materials.blueCupMat,
-                beerCupCollider,
-                beerCupInstance,
-                this._scene,
-                cupsPositions[i]
-            );
-            
-            this._opBeerCupObjs.push(newOpBeerCup);
-        }
-        opBeerCupsHolder.position = positionOffset;
-        //opBeerCupsHolder.isVisible = false;
-        //opBeerCupsHolder.physicsImpostor = new PhysicsImpostor(opBeerCupsHolder, PhysicsImpostor.NoImpostor, {mass: 0},this._scene);
-
-
-        // player's beer cups
-        const plBeerCupsHolder = new TransformNode("plBeerCupsHolder", this._scene);
-        for (let i = 0; i < 10; i++) {
-            let beerCupInstance = this._assets.beerCup.clone("plBeerCup " + i);
-            beerCupInstance.isVisible = true;
-
-            const beerCupCollider = MeshBuilder.CreateCylinder(beerCupInstance.name + "collider", { height: 0.8, diameterTop: 0.7, diameterBottom:0.45 }, this._scene);
-            beerCupCollider.isVisible = false;
-            beerCupCollider.bakeTransformIntoVertices(Matrix.Translation(0, 0.4, 0));
-            
-            beerCupInstance.setParent(beerCupCollider);
-            beerCupCollider.setParent(plBeerCupsHolder);
-            
-            beerCupCollider.physicsImpostor = new PhysicsImpostor(
-                beerCupCollider, 
-                PhysicsImpostor.CylinderImpostor,
-                {mass: 0.2, restitution: 0.2}
-            );
-
-            let plCupPosition = cupsPositions[i];
-            plCupPosition.z = -cupsPositions[i].z
-
-            let newPlBeerCup = new BeerCup(
-                this._materials.redCupMat,
-                beerCupCollider,
-                beerCupInstance,
-                this._scene,
-                plCupPosition
-            );
-            this._opBeerCupObjs.push(newPlBeerCup);
-        }
-        plBeerCupsHolder.position = new Vector3(0, 4.15, 4.5);
-
-        */
+        
         this._assets.beerCup.dispose();
     }
 
@@ -295,38 +211,7 @@ export class Environment {
 
 
     }
-
-
-    /*
-    private _createImpostors(): void {
-
-        const tableCollider = MeshBuilder.CreateBox("tableCollider", {depth: 14.35, width: 3.65, height: 4.125});
-
-        tableCollider.bakeTransformIntoVertices(Matrix.Translation(0, 1, 0));
-        tableCollider.isVisible = true;
-        tableCollider.isPickable = false;
-        tableCollider.checkCollisions = true;
-
-        this._assets.table.parent = tableCollider;
-
-        tableCollider.physicsImpostor = new PhysicsImpostor(
-            tableCollider,
-            PhysicsImpostor.BoxImpostor,
-            {mass: 0, restitution: 0.8}
-        );
-        
-        this._opBeerCupObjs.forEach(cup =>{
-            cup.beerCupCollider.checkCollisions = true;
-            cup.beerCupCollider.physicsImpostor = new PhysicsImpostor(
-                cup.beerCupCollider, 
-                PhysicsImpostor.CylinderImpostor,
-                {mass: 0.1, restitution: 0}
-            )
-        });
-    }
     
-     */
-
 
     private _loadBeerCups(name: string, mesh: Mesh, material: PBRMetallicRoughnessMaterial, positionOffset: Vector3) {
 

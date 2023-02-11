@@ -25,12 +25,10 @@ export default class Game {
     private _room: Room;
 
     private _localPlayer: Player;
-    private _opponent: Player;
     private _camera: UniversalCamera;
 
     private _colyseus;
-
-    //constructor(scene: Scene, engine: Engine, room: Room) {
+    
     constructor(scene: Scene, engine: Engine) {
         this._engine = engine;
         this._scene = scene;
@@ -93,6 +91,59 @@ export default class Game {
         this.doRender();
     }
 
+    private async _onAddPlayers() {
+
+        this._room.state.players.onAdd = (player, key) => {
+            const isCurrentPlayer = (key === this._room.sessionId);
+
+            player.distance = 0;
+            player.strength = 1;
+            player.currentTurn = 0;
+
+            if (isCurrentPlayer) {
+                switch (this.localTeam) {
+                    case Team.BLUE:
+                        console.log("current player of team Blue: ", this.localTeam);
+                        break;
+                    case Team.RED:
+                        console.log("current player of team RED: ", this.localTeam);
+                        break;
+                    default:
+                        console.log("other player of team", this.localTeam);
+                        break;
+                }
+            }
+
+            if (isCurrentPlayer) {
+                console.log("room: ", this._room.id);
+                console.log("this player: ", key);
+                console.log("current turn: ", player.currentTurn);
+
+            }
+
+            player.listen("currentTurn", (currentValue, previousValue) => {
+                if (previousValue != 0 && previousValue != 1) {
+                    console.log("fist start of the game");
+                } else {
+                    console.log(`currentTurn is now ${currentValue}`);
+                    console.log(`previous value was: ${previousValue}`);
+                }
+            });
+
+        };
+
+
+        this._room.state.players.onRemove = () => {
+            this._goToMenu();
+        };
+
+        this._room.onLeave(() => {
+            this._goToMenu();
+        })
+
+    }
+
+
     public async initEnvironment() {
 
         const environment = new Environment(this._scene);
@@ -143,7 +194,7 @@ export default class Game {
 
         let playerTeam = this.localTeam;
 
-        // inital values
+        // initial values
 
         let direction = directionSlider.value;
         let strength = (playerTeam === Team.BLUE) ? strenghtSlider.value : -strenghtSlider.value;
@@ -187,67 +238,7 @@ export default class Game {
         await this._localPlayer.loadPlayerAssets();
     }
 
-    private async _onAddPlayers() {
-
-        this._room.state.players.onAdd = (player, key) => {
-            const isCurrentPlayer = (key === this._room.sessionId);
-
-            player.distance = 0;
-            player.strength = 1;
-            player.currentTurn = 0;
-
-            if (isCurrentPlayer) {
-                switch (this.localTeam) {
-                    case Team.BLUE:
-                        console.log("current player of team Blue: ", this.localTeam);
-                        break;
-                    case Team.RED:
-                        console.log("current player of team RED: ", this.localTeam);
-                        break;
-                    default:
-                        console.log("other player of team", this.localTeam);
-                        break;
-                }
-            }
-
-            if (isCurrentPlayer) {
-                console.log("room: ", this._room.id);
-                console.log("this player: ", key);
-                console.log("current turn: ", player.currentTurn);
-
-            }
-
-            player.listen("currentTurn", (currentValue, previousValue) => {
-                if (previousValue != 0 && previousValue != 1) {
-                    console.log("fist start of the game");
-                } else {
-                    console.log(`currentTurn is now ${currentValue}`);
-                    console.log(`previous value was: ${previousValue}`);
-                }
-            });
-
-            /*
-            player.onChange = function(changes) {
-                changes.forEach(change => {
-                    if(change.field === "currentTurn") {
-                        console.log(`currentTurn is now ${change.value}`);
-                    }
-                })
-            }
-             */
-        };
-
-
-        this._room.state.players.onRemove = () => {
-            this._goToMenu();
-        };
-
-        this._room.onLeave(() => {
-            this._goToMenu();
-        })
-
-    }
-
+    
     private async _goToMenu() {
 
         this._engine.displayLoadingUI();

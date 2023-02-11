@@ -1,22 +1,23 @@
-﻿import {Color3, Mesh, MeshBuilder, PhysicsImpostor, Scene, StandardMaterial, Vector3} from "@babylonjs/core";
+﻿import {
+    Color3, 
+    Mesh, 
+    MeshBuilder, 
+    PhysicsImpostor, 
+    Scene, 
+    StandardMaterial, 
+    Vector3
+} from "@babylonjs/core";
 
 export class Player {
-
-    public id: string;
-    public team: number;
-    //Player
+    
     public playerMesh: Mesh;
     public playerCollider: Mesh;
     private _scene: Scene;
 
-    //public player: TransformNode;
 
-    constructor(/*id: string, team: number, */scene: Scene) {
+
+    constructor(scene: Scene) {
         this._scene = scene;
-        //this.id = id;
-        //this.team = team;
-        //this._setupPlayerCamera();
-        //this.player = new TransformNode("player", this.scene);
     }
 
     public async loadPlayerAssets() {
@@ -53,20 +54,5 @@ export class Player {
         this.playerCollider.physicsImpostor.applyImpulse(forceVector, this.playerCollider.position);
 
     }
-
-    /*
-    private _setupPlayerCamera() {
-
-        //our actual camera that's pointing at our root's position
-        this.camera = new UniversalCamera("cam", new Vector3(0, 8.5, 11), this.scene);
-        //this.camera.lockedTarget = this._camRoot.position;
-        this.camera.rotation = new Vector3(0.35, Math.PI, 0);
-        this.camera.attachControl();
-        this.camera.fov = 0.7
-
-        this.scene.activeCamera = this.camera;
-        return this.camera;
-    }
-     */
 
 }
