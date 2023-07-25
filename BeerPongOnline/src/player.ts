@@ -50,9 +50,44 @@ export class Player {
             PhysicsImpostor.SphereImpostor,
             {mass: 0.3, restitution: 1},
         );
+        
+        this.playerCollider.physicsImpostor.onCollideEvent = function (self, other) {
+
+            let otherMesh = other.object as Mesh;
+            let selfMesh = self.object as Mesh;
+
+            console.log("bullet object", self.object);
+            console.log("hit object " + otherMesh.name, other.object)
+            console.log("----------------------------------");
+            if (otherMesh.name != "ground" && otherMesh.name != "tableCollider") {
+                otherMesh.dispose();
+                if (this._currentTurn === 0){
+                    console.log("respawn!!");
+                    selfMesh.physicsImpostor.dispose();
+                    selfMesh.position.set(0, 7, 6.5);
+                }
+                else {
+                    console.log("respawn!!");
+                    selfMesh.physicsImpostor.dispose();
+                    selfMesh.position.set(0, 7, -6.5);
+                }
+            }
+
+        }
 
         this.playerCollider.physicsImpostor.applyImpulse(forceVector, this.playerCollider.position);
 
+    }
+    
+    public respawn(currentTurn: number){
+        if (currentTurn === 0){
+            console.log("respawn!!");
+            this.playerCollider.position.set(0, 7, 6.5);
+        }
+        else {
+            console.log("respawn!!");
+            this.playerCollider.position.set(0, 7, -6.5);
+        }
     }
 
 }

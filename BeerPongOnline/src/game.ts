@@ -1,4 +1,4 @@
-﻿import {CannonJSPlugin, Color4, Engine, Scene, UniversalCamera, Vector3} from "@babylonjs/core";
+﻿import {CannonJSPlugin, Color4, Engine, Mesh, Scene, UniversalCamera, Vector3} from "@babylonjs/core";
 import Menu from "./menu";
 import {Environment} from "./environment";
 import {AdvancedDynamicTexture, Button, Control, Slider} from "@babylonjs/gui";
@@ -30,16 +30,17 @@ export default class Game {
     private _colyseus;
     
     constructor(scene: Scene, engine: Engine) {
+        
         this._engine = engine;
         this._scene = scene;
-        //this._room = room;
 
         this._colyseus = new Client(ENDPOINT);
 
         this._physicsEngine = new CannonJSPlugin(true, 10, CANNON);
 
+        // pressing "i" in the browser will open the inspector
         window.addEventListener("keydown", (ev) => {
-            // Shift+Ctrl+Alt+I
+
             if (ev.key === "i") {
                 if (this._scene.debugLayer.isVisible()) {
                     this._scene.debugLayer.hide();
@@ -128,6 +129,8 @@ export default class Game {
                     console.log(`currentTurn is now ${currentValue}`);
                     console.log(`previous value was: ${previousValue}`);
                 }
+
+                this._localPlayer.playerCollider.position.set(0, 7, 6.5);
             });
 
         };
@@ -135,6 +138,7 @@ export default class Game {
 
         this._room.state.players.onRemove = () => {
             this._goToMenu();
+            
         };
 
         this._room.onLeave(() => {
@@ -236,8 +240,29 @@ export default class Game {
     private async initBall() {
         this._localPlayer = new Player(this._scene);
         await this._localPlayer.loadPlayerAssets();
-    }
 
+        // this._localPlayer.playerCollider.physicsImpostor.onCollideEvent = function (self, other) {
+        //
+        //     let otherMesh = other.object as Mesh;
+        //     let selfMesh = self.object as Mesh;
+        //
+        //     console.log("bullet object", self.object);
+        //     console.log("hit object " + otherMesh.name, other.object)
+        //     console.log("----------------------------------");
+        //     if (otherMesh.name != "ground" && otherMesh.name != "table") {
+        //         otherMesh.dispose();
+        //         if (this._currentTurn === 0){
+        //             console.log("respawn!!");
+        //             selfMesh.position.set(0, 7, 6.5);
+        //         }
+        //         else {
+        //             console.log("respawn!!");
+        //             selfMesh.position.set(0, 7, -6.5);
+        //         }
+        //     }
+        //
+        // }
+    }
     
     private async _goToMenu() {
 

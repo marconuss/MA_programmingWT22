@@ -19,7 +19,7 @@
 * {
     padding: 0;
     margin: 0;
-    background-image: url("../public/assets/textures/Background_Dots.png");
+    background-image: url("./assets/textures/Background_Dots.png");
     background-size: cover;
     background-position: center;
 }

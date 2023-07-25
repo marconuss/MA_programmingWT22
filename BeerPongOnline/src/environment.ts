@@ -180,6 +180,7 @@ export class Environment {
                 diameterBottom: 0.35
             }, this._scene);
             beerCupCollider.isVisible = SHOWCOLLIDER;
+            //adjust the anchor of the collider mesh
             beerCupCollider.bakeTransformIntoVertices(Matrix.Translation(0, 0.45, 0));
 
             // parenting
@@ -200,62 +201,6 @@ export class Environment {
                 {mass: 0.2, restitution: 0}
             );
         }
-
-
     }
     
-
-    private _loadBeerCups(name: string, mesh: Mesh, material: PBRMetallicRoughnessMaterial, positionOffset: Vector3) {
-
-        const cupsPositions: Vector3[] = [
-            new Vector3(0, 0, 0),
-            new Vector3(0.25, 0, -0.25),
-            new Vector3(-0.25, 0, -0.25),
-            new Vector3(0.5, 0, -0.5),
-            new Vector3(0, 0, -0.5),
-            new Vector3(-0.5, 0, -0.5),
-            new Vector3(0.75, 0, -0.75),
-            new Vector3(0.25, 0, -0.75),
-            new Vector3(-0.25, 0, -0.75),
-            new Vector3(-0.75, 0, -0.75)
-        ];
-
-        const positionMultiplier = new Vector3(1.6, 1, 2.8);
-
-        for (let i = 0; i < 10; i++) {
-
-            // create clone from the beercup mesh
-            const beerCupInstance = mesh.clone(name + i);
-            beerCupInstance.isVisible = true;
-            beerCupInstance.material = material;
-            beerCupInstance.position = Vector3.Zero();
-
-            // create collider mesh
-            const beerCupCollider = MeshBuilder.CreateCylinder(beerCupInstance.name + "_root", {
-                height: 0.6,
-                diameterTop: 0.5,
-                diameterBottom: 0.3
-            }, this._scene);
-            beerCupCollider.isVisible = SHOWCOLLIDER;
-            beerCupCollider.bakeTransformIntoVertices(Matrix.Translation(0, 0.3, 0));
-
-            // parenting
-            beerCupInstance.setParent(beerCupCollider);
-            beerCupCollider.parent = null;
-
-            // arrange beer cups
-            beerCupCollider.position = new Vector3(
-                cupsPositions[i].x * positionMultiplier.x + positionOffset.x,
-                cupsPositions[i].y * positionMultiplier.y + positionOffset.y,
-                cupsPositions[i].z * positionMultiplier.z + positionOffset.z
-            );
-
-            // create physics Impostor for collider mesh
-            beerCupCollider.physicsImpostor = new PhysicsImpostor(
-                beerCupCollider,
-                PhysicsImpostor.CylinderImpostor,
-                {mass: 0, restitution: 0}
-            );
-        }
-    }
 }
