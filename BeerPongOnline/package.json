@@ -19,6 +19,8 @@
     "babylonjs": "^7.43.0",
     "cannon": "^0.6.2",
     "colyseus": "^0.14.24",
-    "colyseus.js": "^0.15.26"
+    "colyseus.js": "^0.15.26",
+    "mongoose": "^8.9.4",
+    "nanoid": "^5.0.9"
   }
 }
